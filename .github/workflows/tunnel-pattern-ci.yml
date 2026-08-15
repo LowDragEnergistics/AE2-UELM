@@ -1,0 +1,57 @@
+name: 'TunnelPattern CI'
+
+on:
+  push:
+    branches:
+      - TunnelPattern
+  pull_request:
+    branches:
+      - TunnelPattern
+  workflow_dispatch:
+
+# Cancel outdated runs for the same branch
+concurrency:
+  group: tunnel-pattern-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan-check:
+    name: Plan constraints (agents.md / todo.md)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate plan constraints
+        run: python3 .github/scripts/check_todo.py agents.md todo.md
+
+  build:
+    name: Build and Test
+    needs: plan-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: AE2-Unofficial-Extended-Life-Modern/AE2-UELM/.github/actions/gradle-setup@forge/1.20.1
+
+      - name: Generate assets
+        run: ./gradlew runData
+
+      - name: Check that datagen ran
+        run: test -d ./src/generated/resources/.cache
+
+      - name: Make sure that datagenned files in the repo are up-to-date
+        run: |
+          # Print status for easier debugging
+          git status
+          if [ -n "$(git status --porcelain)" ]; then exit 1; fi
+
+      - name: Spotless check
+        run: ./gradlew spotlessCheck
+
+      - name: Build with Gradle (includes check, validateResources and tests)
+        run: ./gradlew build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: build/libs/
