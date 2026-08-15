@@ -21,9 +21,11 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.AEKeyFilter;
+import appeng.crafting.pattern.TunnelPatternItem;
 import appeng.hooks.ticking.TickHandler;
 
 /**
@@ -35,9 +37,15 @@ public class NetworkCraftingProviders {
     private final Map<AEKey, PatternsForKey> craftableItems = new HashMap<>();
     /**
      * Input-only (tunnel) patterns, indexed by their UUID. They are not directly craftable; they are only referenced as
-     * inputs from other processing patterns.
+     * inputs from other processing patterns. They are indexed from the network's ME storage, so tunnel patterns stored
+     * in drives and other storage are found by the crafting system.
      */
     private final Map<UUID, IPatternDetails> inputOnlyPatterns = new HashMap<>();
+    /**
+     * The last storage snapshot that {@link #inputOnlyPatterns} was built from. {@link KeyCounter} instances are only
+     * re-created by the storage service when the stored items change, so instance identity is a cheap staleness check.
+     */
+    private KeyCounter lastScannedItems = null;
     /**
      * Used for looking up craftable alternatives using fuzzy search (i.e. ignore NBT).
      */
@@ -127,6 +135,28 @@ public class NetworkCraftingProviders {
         return this.inputOnlyPatterns.get(uuid);
     }
 
+    /**
+     * Re-indexes input-only (tunnel) patterns from the network's ME storage. No-op if the given storage snapshot has
+     * not changed since the last scan.
+     */
+    public void refreshInputOnlyPatterns(KeyCounter items) {
+        if (items == lastScannedItems) {
+            return;
+        }
+        lastScannedItems = items;
+
+        this.inputOnlyPatterns.clear();
+        for (var entry : items) {
+            var key = entry.getKey();
+            if (key instanceof AEItemKey itemKey && itemKey.getItem() instanceof TunnelPatternItem tunnelPatternItem) {
+                var pattern = tunnelPatternItem.decode(itemKey, null);
+                if (pattern != null) {
+                    this.inputOnlyPatterns.put(pattern.getInputOnlyUuid(), pattern);
+                }
+            }
+        }
+    }
+
     public Iterable<ICraftingProvider> getMediums(IPatternDetails key) {
         var mediumList = this.craftingMethods.get(key);
         return Objects.requireNonNullElse(mediumList, Collections.emptyList());
@@ -174,13 +204,9 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.merge(emitable, 1, Integer::sum);
             }
             for (var pattern : patterns) {
-                // Input-only (tunnel) patterns have no output and are not directly craftable. They are indexed by
-                // UUID so that referencing processing patterns can inline their inputs at craft time.
+                // Input-only (tunnel) patterns have no output and are not directly craftable. They are indexed from
+                // the network's ME storage (see refreshInputOnlyPatterns), not from providers.
                 if (pattern.isInputOnly()) {
-                    var uuid = pattern.getInputOnlyUuid();
-                    if (uuid != null) {
-                        methods.inputOnlyPatterns.putIfAbsent(uuid, pattern);
-                    }
                     continue;
                 }
 
@@ -204,12 +230,8 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.compute(emitable, (key, cnt) -> cnt == 1 ? null : cnt - 1);
             }
             for (var pattern : patterns) {
-                // See mount: input-only (tunnel) patterns are never mounted, only indexed by UUID.
+                // See mount: input-only (tunnel) patterns are never mounted.
                 if (pattern.isInputOnly()) {
-                    var uuid = pattern.getInputOnlyUuid();
-                    if (uuid != null) {
-                        methods.inputOnlyPatterns.remove(uuid, pattern);
-                    }
                     continue;
                 }
 

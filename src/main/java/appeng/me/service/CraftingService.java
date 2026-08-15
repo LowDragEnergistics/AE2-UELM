@@ -116,6 +116,7 @@ public class CraftingService implements ICraftingService, IGridServiceProvider {
     private final Set<CraftingCPUCluster> craftingCPUClusters = new HashSet<>();
     private final Map<IGridNode, StackWatcher<ICraftingWatcherNode>> craftingWatchers = new HashMap<>();
     private final IGrid grid;
+    private final IStorageService storageGrid;
     private final NetworkCraftingProviders craftingProviders = new NetworkCraftingProviders();
     private final Map<UUID, CraftingLinkNexus> craftingLinks = new HashMap<>();
     private final Multimap<AEKey, StackWatcher<ICraftingWatcherNode>> interests = HashMultimap.create();
@@ -130,6 +131,7 @@ public class CraftingService implements ICraftingService, IGridServiceProvider {
 
     public CraftingService(IGrid grid, IStorageService storageGrid, IEnergyService energyGrid) {
         this.grid = grid;
+        this.storageGrid = storageGrid;
         this.energyGrid = energyGrid;
         this.lastProcessedCraftingLogicChangeTick = TickHandler.instance().getCurrentTick();
         this.lastProcessedCraftableChangeTick = TickHandler.instance().getCurrentTick();
@@ -318,6 +320,9 @@ public class CraftingService implements ICraftingService, IGridServiceProvider {
     @Nullable
     @Override
     public IPatternDetails getInputOnlyPattern(UUID uuid) {
+        // Tunnel patterns are indexed from the network's ME storage: refresh from the cached inventory first.
+        // The refresh is a no-op unless the stored items changed (instance identity check).
+        this.craftingProviders.refreshInputOnlyPatterns(storageGrid.getCachedInventory());
         return this.craftingProviders.getInputOnlyPattern(uuid);
     }
 

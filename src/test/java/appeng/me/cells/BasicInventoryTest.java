@@ -11,7 +11,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
@@ -21,9 +20,6 @@ import appeng.api.stacks.AEKeyType;
 import appeng.api.storage.StorageCells;
 import appeng.api.storage.cells.CellState;
 import appeng.core.definitions.AEItems;
-import appeng.init.InitItems;
-import appeng.init.internal.InitStorageCells;
-import appeng.init.internal.InitUpgrades;
 import appeng.me.helpers.BaseActionSource;
 import appeng.util.BootstrapMinecraft;
 
@@ -33,9 +29,7 @@ public class BasicInventoryTest {
 
     @BeforeAll
     static void initCells() {
-        InitItems.init(ForgeRegistries.ITEMS);
-        InitStorageCells.init();
-        InitUpgrades.init();
+        CellTestUtil.initCells();
     }
 
     /**
