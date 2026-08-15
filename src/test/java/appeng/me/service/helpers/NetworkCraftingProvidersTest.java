@@ -6,18 +6,22 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
+import appeng.crafting.pattern.TunnelPatternTestHelper;
 import appeng.crafting.simulation.helpers.ProcessingPatternBuilder;
 import appeng.util.BootstrapMinecraft;
 
@@ -145,5 +149,69 @@ class NetworkCraftingProvidersTest {
 
             assertThat(craftingProviders.getCraftingFor(andesite)).hasSize(TEST_COUNT - i - 1);
         }
+    }
+
+    @Test
+    void testTunnelPatternsIndexedFromStorage() {
+        var providers = new NetworkCraftingProviders();
+        var uuid = UUID.randomUUID();
+        var tunnel = PatternDetailsHelper.encodeTunnelPattern(
+                new GenericStack[] { GenericStack.fromItemStack(new ItemStack(Items.STICK)) }, uuid, "test");
+        var tunnelKey = AEItemKey.of(tunnel);
+
+        var items = new KeyCounter();
+        items.add(tunnelKey, 1);
+        items.add(AEItemKey.of(Items.STICK), 5);
+
+        providers.refreshInputOnlyPatterns(items);
+
+        var found = providers.getInputOnlyPattern(uuid);
+        assertThat(found).isNotNull();
+        assertThat(found.isInputOnly()).isTrue();
+        assertThat(found.getInputOnlyUuid()).isEqualTo(uuid);
+        assertThat(found.getInputs()).hasSize(1);
+
+        // A second refresh with an unchanged storage snapshot is a no-op.
+        providers.refreshInputOnlyPatterns(items);
+        assertThat(providers.getInputOnlyPattern(uuid)).isNotNull();
+
+        // Removing the pattern from storage un-indexes it.
+        var itemsWithoutTunnel = new KeyCounter();
+        itemsWithoutTunnel.add(AEItemKey.of(Items.STICK), 5);
+        providers.refreshInputOnlyPatterns(itemsWithoutTunnel);
+        assertThat(providers.getInputOnlyPattern(uuid)).isNull();
+    }
+
+    @Test
+    void testTunnelPatternsNotIndexedFromProviders() {
+        var providers = new NetworkCraftingProviders();
+        var uuid = UUID.randomUUID();
+
+        // Input-only patterns are indexed from ME storage only; a provider exposing one must not index it.
+        var inputOnly = TunnelPatternTestHelper.inputOnly(uuid,
+                TunnelPatternTestHelper.input(1, GenericStack.fromItemStack(new ItemStack(Items.STICK))));
+        var provider = new ICraftingProvider() {
+            @Override
+            public List<IPatternDetails> getAvailablePatterns() {
+                return List.of(inputOnly);
+            }
+
+            @Override
+            public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
+                return false;
+            }
+
+            @Override
+            public boolean isBusy() {
+                return true;
+            }
+        };
+        var node = mock(IGridNode.class);
+        when(node.getService(ICraftingProvider.class)).thenReturn(provider);
+
+        providers.addProvider(node);
+
+        assertThat(providers.getInputOnlyPattern(uuid)).isNull();
+        assertThat(providers.getCraftingFor(AEItemKey.of(Items.STICK))).isEmpty();
     }
 }
