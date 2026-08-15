@@ -253,4 +253,16 @@ If either some contents could not be returned or if it was not connected to a ne
 
 </details>
 
+<!-- CHANGELOG-PR:24 -->
+<details>
+<summary><strong>TunnelPattern: input-only patterns usable as pattern inputs</strong></summary>
+
+Adds a new `tunnel_pattern` item: an input-only processing pattern that can be used as an input when
+encoding other processing patterns. At craft time its inputs are inlined (multiplied by the referenced
+count) into the referencing pattern instead of the tunnel pattern item itself. Tunnel patterns are
+indexed by UUID, so their contents can be changed or renamed without updating the patterns that
+reference them. Includes encoding/decoding support, crafting-simulation integration with cycle and
+overflow guards, CPU execution integration, tooltips and guidebook documentation.
+</details>
+
 <!-- CHANGES:ENTRIES -->

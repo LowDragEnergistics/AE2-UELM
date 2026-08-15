@@ -12,6 +12,7 @@ item_ids:
 - ae2:processing_pattern
 - ae2:smithing_table_pattern
 - ae2:stonecutting_pattern
+- ae2:tunnel_pattern
 ---
 
 # Patterns
@@ -54,6 +55,13 @@ There are several different types of pattern for different things:
 Multiple <ItemLink id="pattern_provider" />s with identical patterns are supported and work in parallel. Additionally, you can have a pattern say,
 for example, 8 cobblestone = 8 stone instead of 1 cobblestone = 1 stone, and the pattern provider will insert 8 cobblestone into
 your smelting setup every operation instead of one at a time.
+
+***
+
+*   <ItemLink id="tunnel_pattern" />s are input-only processing patterns, used as an **input** when encoding other processing patterns.
+    At craft time their inputs are inlined into the referencing pattern, multiplied by the referenced count. They are indexed by
+    UUID, so their contents can be changed or renamed without updating the patterns that reference them.
+    See [Tunnel Patterns](../ae2-mechanics/tunnel-pattern.md) for details.
 
 ## Recipe
 

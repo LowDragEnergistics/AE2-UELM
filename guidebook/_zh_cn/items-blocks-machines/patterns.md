@@ -12,6 +12,7 @@ item_ids:
 - ae2:processing_pattern
 - ae2:smithing_table_pattern
 - ae2:stonecutting_pattern
+- ae2:tunnel_pattern
 ---
 
 # 样板系统
@@ -56,6 +57,12 @@ item_ids:
 * 提供最高灵活度的广义合成方案，仅定义"投入原料→获取产物"关系
 * 兼容所有模组机器及熔炉等原版设备，不限制中间工艺流程
 * 支持自定义生产链（如"1樱花木板=1下界之星"的自动化指令触发）
+
+***
+
+* <ItemLink id="tunnel_pattern" />为只含输入的样板，用作**输入**参与其他处理样板的编码。
+  合成时其输入会乘以引用数量后内联进引用它的样板；按 UUID 索引，修改内容或重命名
+  无需更新引用它的样板。详见[隧道样板](../ae2-mechanics/tunnel-pattern.md)。
 
 ## 高级特性
 
