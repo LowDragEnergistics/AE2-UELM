@@ -142,6 +142,45 @@ public class TunnelSimulationTest {
     }
 
     @Test
+    public void testNonInputOnlyTargetFails() {
+        var env = new SimulationEnv();
+        var uuid = UUID.randomUUID();
+
+        // A "tunnel" UUID that resolves to a non-input-only pattern (corrupted state): the reference is kept
+        // as-is, and since tunnel items are not obtainable, the plan fails.
+        env.addInputOnlyPattern(new IPatternDetails() {
+            @Override
+            public AEItemKey getDefinition() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public IInput[] getInputs() {
+                return new IInput[] { preciseInput(1, item(TUNNEL_INPUT)) };
+            }
+
+            @Override
+            public GenericStack[] getOutputs() {
+                return new GenericStack[] { item(ITEM_OUTPUT) };
+            }
+
+            @Override
+            public UUID getInputOnlyUuid() {
+                return uuid;
+            }
+        });
+
+        env.addPattern(new ProcessingPatternBuilder(item(ITEM_OUTPUT))
+                .addPreciseInput(1, tunnelReference(uuid, 1))
+                .build());
+
+        env.addStoredItem(item(TUNNEL_INPUT));
+
+        var plan = env.runSimulation(item(ITEM_OUTPUT), CalculationStrategy.REPORT_MISSING_ITEMS);
+        assertThatPlan(plan).failed();
+    }
+
+    @Test
     public void testBrokenTunnelPatternFallsBackToOtherPattern() {
         var env = new SimulationEnv();
         var brokenUuid = UUID.randomUUID();

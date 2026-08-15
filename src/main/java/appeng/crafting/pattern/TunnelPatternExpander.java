@@ -71,21 +71,28 @@ public final class TunnelPatternExpander {
     private static boolean expand(IInput input, long currentMultiplier, Function<UUID, IPatternDetails> lookup,
             Set<IPatternDetails> parentPatterns, Set<UUID> expansionStack, List<IInput> out) {
         var firstInput = input.getPossibleInputs()[0];
-        var tunnelUuid = getTunnelUuid(firstInput);
-        if (tunnelUuid == null) {
-            // Not a tunnel reference: keep the input unchanged at the top level, or multiply it deeper in the chain.
+        if (!(firstInput.what() instanceof AEItemKey itemKey)
+                || !(itemKey.getItem() instanceof TunnelPatternItem)) {
+            // Not a tunnel reference: keep the input unchanged at the top level, or scale it deeper in the chain.
             if (currentMultiplier == 1) {
                 out.add(input);
             } else {
-                long amount;
+                long total;
                 try {
-                    amount = Math.multiplyExact(firstInput.amount(), currentMultiplier);
+                    total = Math.multiplyExact(
+                            Math.multiplyExact(firstInput.amount(), input.getMultiplier()), currentMultiplier);
                 } catch (ArithmeticException ex) {
                     return false;
                 }
-                out.add(new AEProcessingPattern.Input(new GenericStack(firstInput.what(), amount)));
+                out.add(new AEProcessingPattern.Input(new GenericStack(firstInput.what(), total)));
             }
             return true;
+        }
+
+        var tunnelUuid = TunnelPatternItem.getTunnelUuid(itemKey.toStack());
+        if (tunnelUuid == null) {
+            // Malformed tunnel reference: the item is a tunnel pattern but carries no valid UUID.
+            return false;
         }
 
         var target = lookup.apply(tunnelUuid);
@@ -120,16 +127,5 @@ public final class TunnelPatternExpander {
 
         expansionStack.remove(tunnelUuid);
         return true;
-    }
-
-    @Nullable
-    private static UUID getTunnelUuid(GenericStack stack) {
-        if (!(stack.what() instanceof AEItemKey itemKey)) {
-            return null;
-        }
-        if (!(itemKey.getItem() instanceof TunnelPatternItem)) {
-            return null;
-        }
-        return TunnelPatternItem.getTunnelUuid(itemKey.toStack());
     }
 }

@@ -97,13 +97,11 @@
 - [x] **TP-600** 工具提示：`TunnelPatternItem`/`EncodedPatternItem` 的 `appendHoverText` 增加 tunnel 信息（4 行说明 + UUID） — 文件：`src/main/java/appeng/crafting/pattern/EncodedPatternItem.java`（`appendHoverText` 对 `details.isInputOnly()` 追加灰色 4 行说明 + `TunnelPatternUuid` 行）、`src/main/java/appeng/core/localization/GuiText.java`（新增 `TunnelPatternInfo1~4`、`TunnelPatternUuid` 五个枚举键） — 验证：`TunnelPatternTooltipTest` 3 用例（隧道样板显示 4 键 + UUID 参数；处理样板/畸形隧道物品不显示；结构化断言转译键，与语言加载状态无关）
 - [x] **TP-601** 本地化：`assets/ae2/lang/en_gb.json` 增加 `item.ae2.tunnel_pattern` 及 4 条提示键（参考 1.7.10 英文文案）；同步 `zh_cn.json` 中文翻译 — 文件：`src/main/resources/assets/ae2/lang/en_gb.json`（5 条新键）、`zh_cn.json`（5 条新键：编码处理样板时用作输入/其输入会被内联进所编码的样板/按 UUID 索引…/或重命名…/UUID：%s） — 验证：`runData` 生成 en_us.json 5 键；lang JSON 语法校验通过；spotless/validateResources 通过
 
-## M7 测试
+## M7 测试 ✅
 
-- [ ] **TP-700** 单元测试：NBT 编解码往返、`AETunnelPattern` 非法输入拒绝、`TunnelPatternExpander` 纯函数（多级/循环/溢出/缺失） — 文件：`src/test/java/appeng/crafting/pattern/`（新增 `TunnelPatternItemTest.java`、`TunnelPatternExpanderTest.java`） — 验证：`./gradlew test` 全绿
-- [ ] **TP-701** 仿真测试：`CraftingSimulationTest` 新增场景——引用内联、乘数、多级引用、循环引用拒绝、目标非 input-only 回退、模拟失败回滚；`SimulationEnv` 支持注册 input-only 模式 — 文件：`src/test/java/appeng/crafting/simulation/CraftingSimulationTest.java`、`src/test/java/appeng/crafting/simulation/helpers/`（新增 `TunnelPatternBuilder` 或扩展 `ProcessingPatternBuilder`） — 验证：`./gradlew test` 全绿
-- [ ] **TP-702** 注册/资源测试：`TUNNEL_PATTERN` 可被 `ItemStorage` 编目、datagen 无 diff、lang 键存在 — 文件：对应现有 registration/lang 测试 — 验证：`./gradlew runData && git diff --exit-code`
-
----
+- [x] **TP-700** 单元测试：NBT 编解码往返、`AETunnelPattern` 非法输入拒绝、`TunnelPatternExpander` 纯函数（多级/循环/溢出/缺失） — 文件：`src/test/java/appeng/crafting/pattern/TunnelPatternExpanderTest.java`（新，10 用例：非隧道输入原样保留/多级展开/目标乘数正确累乘/自环与间接环拒绝/乘数溢出拒绝/目标缺失保留原输入/目标非 input-only 保留原输入/畸形 UUID 判失败/父模式链防环）；NBT 往返与非法拒绝由既有 `TunnelPatternEncodingTest`（12 用例）覆盖 — 验证：`./gradlew test` 全绿；本里程碑纯函数测试捕获并修复了展开器两个真实缺陷（叶子路径丢失 `input.getMultiplier()` 导致嵌套乘数错误；畸形 UUID 应判展开失败而非保留原输入，与 1.7.10 语义对齐）
+- [x] **TP-701** 仿真测试：`CraftingSimulationTest` 新增场景——引用内联、乘数、多级引用、循环引用拒绝、目标非 input-only 回退、模拟失败回滚；`SimulationEnv` 支持注册 input-only 模式 — 文件：`src/test/java/appeng/crafting/simulation/TunnelSimulationTest.java`（7 用例：内联/乘数/嵌套/环/目标缺失/目标非 input-only 回退/坏样板回退）、`src/test/java/appeng/crafting/simulation/helpers/SimulationEnv.java`（`addInputOnlyPattern`，M4 已接入） — 验证：`./gradlew test` 全绿
+- [x] **TP-702** 注册/资源测试：`TUNNEL_PATTERN` 可被 `ItemStorage` 编目、datagen 无 diff、lang 键存在 — 文件：`src/test/java/appeng/crafting/pattern/TunnelPatternRegistrationTest.java`（新，3 用例：注册表含 TUNNEL_PATTERN 且 id 正确/ItemKey+KeyCounter 存储往返（item/count/tag 三项）/en_us+en_gb+zh_cn 三语文件含物品名与提示键） — 验证：`./gradlew runData && git diff --exit-code`（本机 runData 后 generated 无残留 diff）；全量 475 用例仅剩基线环境固有 CubeBuilderTest 失败
 
 ## M8 收尾与发布
 
