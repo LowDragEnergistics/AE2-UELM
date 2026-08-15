@@ -66,17 +66,17 @@
 
 ---
 
-## M4 索引与运行时展开
+## M4 索引与运行时展开 ✅
 
 > 移植 `CraftingGridCache.inputOnlyPatterns`（UUID → 模式）与 `TunnelPatternExpander`（递归内联 + 防环/防溢出）。
 
-- [ ] **TP-400** `NetworkCraftingProviders`：新增 `Map<UUID, IPatternDetails> inputOnlyPatterns`；重建时 input-only 模式按 UUID 入表、**不**进入 `craftableItems`；暴露 `getInputOnlyPattern(UUID)`；模式移除时同步清理 — 文件：`src/main/java/appeng/me/service/helpers/NetworkCraftingProviders.java`、`src/main/java/appeng/me/service/CraftingService.java`（透传） — 验证：`NetworkCraftingProvidersTest` 扩展
-- [ ] **TP-401** 移植 `TunnelPatternExpander`：`expandInputs(IAEStack/GenericStack 列表, 查找函数, 父模式集合)`：
+- [x] **TP-400** `NetworkCraftingProviders`：新增 `Map<UUID, IPatternDetails> inputOnlyPatterns`；重建时 input-only 模式按 UUID 入表、**不**进入 `craftableItems`；暴露 `getInputOnlyPattern(UUID)`；模式移除时同步清理 — 文件：`src/main/java/appeng/me/service/helpers/NetworkCraftingProviders.java`、`src/main/java/appeng/me/service/CraftingService.java`（透传）、`src/main/java/appeng/api/networking/crafting/ICraftingService.java`（默认方法，第三方实现零破坏） — 验证：`NetworkCraftingProvidersTest` 2 用例不回归；mount 用 `putIfAbsent`、unmount 用 `remove(uuid, pattern)` 与参照实现一致
+- [x] **TP-401** 移植 `TunnelPatternExpander`：`expandInputs(IInput[], 查找函数, 父模式集合)`：
   - 输入为 TunnelPattern 物品 → 按 UUID 查目标 input-only 模式，取其浓缩输入递归展开，数量乘以引用堆叠数（`Math.multiplyExact` 防溢出）
   - 防环：展开栈 + 父模式链检测；目标缺失/非 input-only → 按 1.7.10 语义处理（保留原输入或失败，按设计文档确定）
-  - 文件：`src/main/java/appeng/crafting/pattern/TunnelPatternExpander.java`（新） — 验证：纯函数单测（多级引用、循环引用、乘数溢出、UUID 缺失）
-- [ ] **TP-402** 接入 `CraftingTreeProcess` 子节点构建：将 `details.getInputs()` 中的 TunnelPattern 输入先经展开器替换为内联输入再建子节点；循环引用在树层再次兜底（复用/扩展 `notRecursive`） — 文件：`src/main/java/appeng/crafting/CraftingTreeProcess.java`、必要时 `CraftingTreeNode.java` — 验证：`CraftingSimulationTest` 新增场景（见 M7）
-- [ ] **TP-403** 仿真状态正确性：展开后的输入走 `CraftingSimulationState`/`ChildCraftingSimulationState` 计入与回滚（含 byproduct 语义不变） — 文件：`src/main/java/appeng/crafting/inv/*`（如涉及） — 验证：仿真测试断言计数与回滚
+  - 文件：`src/main/java/appeng/crafting/pattern/TunnelPatternExpander.java`（新，复用 `AEProcessingPattern.Input` 并放开包内可见性） — 验证：`TunnelSimulationTest` 6 用例覆盖（内联/乘数/嵌套/环/目标缺失/坏样板回退）
+- [x] **TP-402** 接入 `CraftingTreeProcess` 子节点构建：将 `details.getInputs()` 中的 TunnelPattern 输入先经展开器替换为内联输入再建子节点；循环引用在树层再次兜底（复用/扩展 `notRecursive`） — 文件：`src/main/java/appeng/crafting/pattern/TunnelPatternExpander.java`、`src/main/java/appeng/crafting/CraftingTreeProcess.java`（构造器展开钩子：失败 → `possible=false` 使该样板分支回退到其他样板）、`src/main/java/appeng/crafting/CraftingTreeNode.java`（新增直接传 `IInput` 的构造重载 + `addContainerItems` 空 parentInput 防护 + 祖先访问器） — 验证：`TunnelSimulationTest.testBrokenTunnelPatternFallsBackToOtherPattern` 断言坏样板不进入 `patternTimes`、好样板成功
+- [x] **TP-403** 仿真状态正确性：展开后的输入走 `CraftingSimulationState`/`ChildCraftingSimulationState` 计入与回滚（含 byproduct 语义不变） — 文件：`src/test/java/appeng/crafting/simulation/helpers/SimulationEnv.java`（新增 `addInputOnlyPattern` 与 mock 服务 `getInputOnlyPattern`）、`src/test/java/appeng/crafting/simulation/TunnelSimulationTest.java`（新） — 验证：`testTunnelInputInlined` 断言 `usedItems` 精确计数（2 根木棍）；坏样板回退用例经 `ChildCraftingSimulationState` 回滚后 `patternTimes` 不含坏样板；全量 451 用例仅剩基线环境固有 CubeBuilderTest 失败
 
 ---
 

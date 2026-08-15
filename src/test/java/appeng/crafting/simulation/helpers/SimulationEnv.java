@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +49,7 @@ import appeng.me.helpers.BaseActionSource;
 
 public class SimulationEnv {
     private final Map<AEKey, List<IPatternDetails>> patterns = new HashMap<>();
+    private final Map<UUID, IPatternDetails> inputOnlyPatterns = new HashMap<>();
     private final KeyCounter craftableItemsList = new KeyCounter();
     private final Set<AEKey> emitableItems = new HashSet<>();
     private final KeyCounter networkStorage = new KeyCounter();
@@ -56,6 +58,18 @@ public class SimulationEnv {
         var output = pattern.getPrimaryOutput();
         patterns.computeIfAbsent(output.what(), s -> new ArrayList<>()).add(pattern);
         craftableItemsList.add(output.what(), 1);
+        return pattern;
+    }
+
+    /**
+     * Registers an input-only (tunnel) pattern, which is looked up by UUID when expanding tunnel references.
+     */
+    public IPatternDetails addInputOnlyPattern(IPatternDetails pattern) {
+        var uuid = pattern.getInputOnlyUuid();
+        if (uuid == null) {
+            throw new IllegalArgumentException("Pattern is not an input-only pattern: " + pattern);
+        }
+        inputOnlyPatterns.put(uuid, pattern);
         return pattern;
     }
 
@@ -77,6 +91,9 @@ public class SimulationEnv {
             for (var pattern : entry.getValue()) {
                 copy.addPattern(pattern);
             }
+        }
+        for (var pattern : inputOnlyPatterns.values()) {
+            copy.addInputOnlyPattern(pattern);
         }
         for (var emitable : emitableItems) {
             copy.addEmitable(emitable);
@@ -130,6 +147,12 @@ public class SimulationEnv {
                     return ImmutableList.of();
                 }
                 return ImmutableList.copyOf(list);
+            }
+
+            @Nullable
+            @Override
+            public IPatternDetails getInputOnlyPattern(UUID uuid) {
+                return inputOnlyPatterns.get(uuid);
             }
 
             @Nullable

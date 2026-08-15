@@ -25,6 +25,7 @@ package appeng.api.networking.crafting;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 import com.google.common.collect.ImmutableSet;
@@ -71,6 +72,14 @@ public interface ICraftingService extends IGridService {
      */
     @Nullable
     AEKey getFuzzyCraftable(AEKey whatToCraft, AEKeyFilter filter);
+
+    /**
+     * @return the input-only (tunnel) pattern registered in this grid with the given UUID, or null if there is none.
+     */
+    @Nullable
+    default IPatternDetails getInputOnlyPattern(UUID uuid) {
+        return null;
+    }
 
     /**
      * Begin calculating a crafting job.

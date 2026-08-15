@@ -129,11 +129,11 @@ public class AEProcessingPattern implements IPatternDetails {
         }
     }
 
-    private static class Input implements IInput {
+    static class Input implements IInput {
         private final GenericStack[] template;
         private final long multiplier;
 
-        private Input(GenericStack stack) {
+        Input(GenericStack stack) {
             this.template = new GenericStack[] { new GenericStack(stack.what(), 1) };
             this.multiplier = stack.amount();
         }

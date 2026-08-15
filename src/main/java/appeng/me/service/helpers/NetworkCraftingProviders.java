@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 
 import com.google.common.collect.Iterators;
 
@@ -32,6 +33,11 @@ public class NetworkCraftingProviders {
     private final Map<IGridNode, ProviderState> craftingProviders = new HashMap<>();
     private final Map<IPatternDetails, CraftingProviderList> craftingMethods = new HashMap<>();
     private final Map<AEKey, PatternsForKey> craftableItems = new HashMap<>();
+    /**
+     * Input-only (tunnel) patterns, indexed by their UUID. They are not directly craftable; they are only referenced as
+     * inputs from other processing patterns.
+     */
+    private final Map<UUID, IPatternDetails> inputOnlyPatterns = new HashMap<>();
     /**
      * Used for looking up craftable alternatives using fuzzy search (i.e. ignore NBT).
      */
@@ -116,6 +122,11 @@ public class NetworkCraftingProviders {
         return this.emitableItems.containsKey(someItem);
     }
 
+    @Nullable
+    public IPatternDetails getInputOnlyPattern(UUID uuid) {
+        return this.inputOnlyPatterns.get(uuid);
+    }
+
     public Iterable<ICraftingProvider> getMediums(IPatternDetails key) {
         var mediumList = this.craftingMethods.get(key);
         return Objects.requireNonNullElse(mediumList, Collections.emptyList());
@@ -163,9 +174,13 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.merge(emitable, 1, Integer::sum);
             }
             for (var pattern : patterns) {
-                // Input-only (tunnel) patterns have no output and are not directly craftable. They are only used as
-                // input references from other patterns (indexed separately by UUID).
+                // Input-only (tunnel) patterns have no output and are not directly craftable. They are indexed by
+                // UUID so that referencing processing patterns can inline their inputs at craft time.
                 if (pattern.isInputOnly()) {
+                    var uuid = pattern.getInputOnlyUuid();
+                    if (uuid != null) {
+                        methods.inputOnlyPatterns.putIfAbsent(uuid, pattern);
+                    }
                     continue;
                 }
 
@@ -189,8 +204,12 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.compute(emitable, (key, cnt) -> cnt == 1 ? null : cnt - 1);
             }
             for (var pattern : patterns) {
-                // See mount: input-only (tunnel) patterns are never mounted.
+                // See mount: input-only (tunnel) patterns are never mounted, only indexed by UUID.
                 if (pattern.isInputOnly()) {
+                    var uuid = pattern.getInputOnlyUuid();
+                    if (uuid != null) {
+                        methods.inputOnlyPatterns.remove(uuid, pattern);
+                    }
                     continue;
                 }
 

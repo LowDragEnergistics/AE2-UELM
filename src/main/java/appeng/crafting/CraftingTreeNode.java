@@ -69,14 +69,27 @@ public class CraftingTreeNode {
 
     public CraftingTreeNode(ICraftingService cc, CraftingCalculation job, AEKey what, long amount,
             CraftingTreeProcess par, int slot) {
+        this(cc, job, what, amount, par, slot == -1 ? null : par.details.getInputs()[slot]);
+    }
+
+    /**
+     * Creates a node for the given input. The {@code parentInput} may be a synthesized input for expanded tunnel
+     * pattern references, in which case substitution is not available.
+     */
+    public CraftingTreeNode(ICraftingService cc, CraftingCalculation job, AEKey what, long amount,
+            CraftingTreeProcess par, @Nullable IPatternDetails.IInput parentInput) {
         this.parent = par;
-        this.parentInput = slot == -1 ? null : par.details.getInputs()[slot];
+        this.parentInput = parentInput;
         this.level = job.getLevel();
         this.job = job;
         this.what = findCraftedStack(cc, what);
         this.amount = amount;
 
         this.canEmit = cc.canEmitFor(what);
+    }
+
+    CraftingTreeProcess getParentProcess() {
+        return parent;
     }
 
     private AEKey findCraftedStack(ICraftingService cc, AEKey wat) {
@@ -289,7 +302,7 @@ public class CraftingTreeNode {
     // Only item stacks are supported.
     private void addContainerItems(AEKey template, long multiplier,
             @Nullable KeyCounter outputList) {
-        if (outputList != null) {
+        if (outputList != null && parentInput != null) {
             var containerItem = parentInput.getRemainingKey(template);
             if (containerItem != null) {
                 outputList.add(containerItem, multiplier);
