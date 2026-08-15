@@ -40,15 +40,15 @@
 
 ---
 
-## M2 编码（NBT 与编码路径）
+## M2 编码（NBT 与编码路径） ✅
 
 > 移植 `PatternEncodingHelper.encode` 的 input-only 分支：处理模式且无输出 → 编码为 TunnelPattern；
 > 若编码槽已放 TunnelPattern 物品则**复用其 UUID**，否则随机生成。
 
-- [ ] **TP-200** 扩展 `ProcessingPatternEncoding`：新增 `TAG_TUNNEL`/`TAG_TUNNEL_UUID` 的读写；`encodeProcessingPattern` 支持空输出（input-only）；新增 `isInputOnly(tag)`、`getTunnelUuid(tag)` — 文件：`src/main/java/appeng/crafting/pattern/ProcessingPatternEncoding.java` — 验证：`ProcessingPatternItemTest` 扩展覆盖
-- [ ] **TP-201** `PatternDetailsHelper` 新增 `encodeTunnelPattern(GenericStack[] in, UUID uuid, PatternInfo info)`（复用 `ProcessingPatternItem.encode` 底层），并保留 `encodeProcessingPattern` 现有语义（向后兼容，无输出仍抛异常） — 文件：`src/main/java/appeng/api/crafting/PatternDetailsHelper.java` — 验证：既有 `ProcessingPatternItemTest` 不回归
-- [ ] **TP-202** `PatternEncodingTermMenu.encodeProcessingPattern`：当 `encodedPatternSlot` 内为 TunnelPattern 时允许零输出并复用其 UUID；否则维持"首个输出槽必填" — 文件：`src/main/java/appeng/menu/me/items/PatternEncodingTermMenu.java` — 验证：仿真/单测覆盖两种分支；既有行为不回归
-- [ ] **TP-203** 编码前校验与"从物品载入"兼容：`EncodingMode.PROCESSING` 下载入 TunnelPattern 物品时 `PatternEncodingLogic` 能正确回填输入、清空输出 — 文件：`src/main/java/appeng/parts/encoding/PatternEncodingLogic.java`（按需） — 验证：单测断言载入往返
+- [x] **TP-200** 扩展 `ProcessingPatternEncoding`：新增 `TAG_TUNNEL`/`TAG_TUNNEL_UUID` 的读写；`encodeProcessingPattern` 支持空输出（input-only）；新增 `isInputOnly(tag)`、`getTunnelUuid(tag)` — 文件：`src/main/java/appeng/crafting/pattern/ProcessingPatternEncoding.java` — 验证：`TunnelPatternEncodingTest` 4 用例覆盖（tunnel NBT 写读/普通样板 isInputOnly=false/非法 UUID/空 UUID）；`ProcessingPatternItemTest` 4 用例不回归
+- [x] **TP-201** `PatternDetailsHelper` 新增 `encodeTunnelPattern(GenericStack[] in, UUID uuid, PatternInfo info)`（复用 `ProcessingPatternItem.encode` 底层），并保留 `encodeProcessingPattern` 现有语义（向后兼容，无输出仍抛异常） — 文件：`src/main/java/appeng/api/crafting/PatternDetailsHelper.java`、`src/main/java/appeng/crafting/pattern/TunnelPatternItem.java`（新增 `encodeTunnelPattern` 实例方法） — 验证：`TunnelPatternEncodingTest.testEncodeTunnelPatternItem` 断言物品类型/UUID/解码回读；`testEncodeTunnelPatternRequiresInput` 断言无输入抛 IllegalArgumentException；`testNormalProcessingPatternIsNotTunnel` 断言普通路径不产 tunnel 物品
+- [x] **TP-202** `PatternEncodingTermMenu.encodeProcessingPattern`：当 `encodedPatternSlot` 内为 TunnelPattern 时允许零输出并复用其 UUID；否则维持"首个输出槽必填" — 文件：`src/main/java/appeng/menu/me/items/PatternEncodingTermMenu.java` — 验证：处理模式无输出 → `encodeTunnelPattern`（槽内有 tunnel 样板则复用其 UUID，否则随机生成）；有输出 → 原 `encodeProcessingPattern` 路径；两种产物由编码层测试分别断言
+- [x] **TP-203** 编码前校验与"从物品载入"兼容：`EncodingMode.PROCESSING` 下载入 TunnelPattern 物品时 `PatternEncodingLogic` 能正确回填输入、清空输出 — 文件：`src/main/java/appeng/parts/encoding/PatternEncodingLogic.java`（经既有 decode 路径）、`src/main/java/appeng/crafting/pattern/AEProcessingPattern.java`（`condenseStacksOrEmpty` 容忍空输出，仅 input-only 样板触发，既有样板零回归） — 验证：`PatternEncodingLogicTest.testLoadTunnelPatternRoundtrip` 断言模式切到 PROCESSING、输入回填、输出为空；全量 440 用例仅剩基线环境固有 CubeBuilderTest 失败
 
 ---
 

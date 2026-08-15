@@ -18,12 +18,17 @@
 
 package appeng.crafting.pattern;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+
+import appeng.api.crafting.PatternInfo;
+import appeng.api.stacks.GenericStack;
 
 /**
  * An item that contains an encoded input-only "tunnel" pattern.
@@ -81,5 +86,20 @@ public class TunnelPatternItem extends ProcessingPatternItem {
     public static void writeTunnelUuid(CompoundTag tag, UUID uuid) {
         tag.putBoolean(TAG_TUNNEL, true);
         tag.putString(TAG_TUNNEL_UUID, uuid.toString());
+    }
+
+    /**
+     * Encodes an input-only tunnel pattern with the given inputs and UUID.
+     *
+     * @throws IllegalArgumentException If sparseInputs contains only null/empty stacks.
+     */
+    public ItemStack encodeTunnelPattern(GenericStack[] sparseInputs, UUID uuid, PatternInfo info) {
+        if (Arrays.stream(sparseInputs).noneMatch(Objects::nonNull)) {
+            throw new IllegalArgumentException("At least one input must be non-null.");
+        }
+
+        var stack = new ItemStack(this);
+        ProcessingPatternEncoding.encodeTunnelPattern(stack.getOrCreateTag(), sparseInputs, uuid, info);
+        return stack;
     }
 }

@@ -54,8 +54,8 @@ public class AEProcessingPattern implements IPatternDetails {
             inputs[i] = new Input(condensedInputs[i]);
         }
 
-        // Ordering is preserved by condenseStacks
-        this.condensedOutputs = AEPatternHelper.condenseStacks(sparseOutputs);
+        // Ordering is preserved by condenseStacks. Input-only (tunnel) patterns have no outputs.
+        this.condensedOutputs = AEPatternHelper.condenseStacksOrEmpty(sparseOutputs);
     }
 
     @Override
