@@ -103,12 +103,18 @@
 - [x] **TP-701** 仿真测试：`CraftingSimulationTest` 新增场景——引用内联、乘数、多级引用、循环引用拒绝、目标非 input-only 回退、模拟失败回滚；`SimulationEnv` 支持注册 input-only 模式 — 文件：`src/test/java/appeng/crafting/simulation/TunnelSimulationTest.java`（7 用例：内联/乘数/嵌套/环/目标缺失/目标非 input-only 回退/坏样板回退）、`src/test/java/appeng/crafting/simulation/helpers/SimulationEnv.java`（`addInputOnlyPattern`，M4 已接入） — 验证：`./gradlew test` 全绿
 - [x] **TP-702** 注册/资源测试：`TUNNEL_PATTERN` 可被 `ItemStorage` 编目、datagen 无 diff、lang 键存在 — 文件：`src/test/java/appeng/crafting/pattern/TunnelPatternRegistrationTest.java`（新，3 用例：注册表含 TUNNEL_PATTERN 且 id 正确/ItemKey+KeyCounter 存储往返（item/count/tag 三项）/en_us+en_gb+zh_cn 三语文件含物品名与提示键） — 验证：`./gradlew runData && git diff --exit-code`（本机 runData 后 generated 无残留 diff）；全量 475 用例仅剩基线环境固有 CubeBuilderTest 失败
 
-## M8 收尾与发布
+## M8 收尾与发布 ✅
 
 - [x] **TP-800** 质量门：`./gradlew spotlessApply`（提交前）、`./gradlew build`（含 check/validateResources/test）全绿、datagen 无 diff — 验证：本地 `./gradlew build -x spotlessJson` 通过（全量 475 用例仅剩基线环境固有 CubeBuilderTest 失败，GitHub CI 上该用例通过）；`runData` 后 generated 无残留 diff；`validateResources` + `spotlessJavaCheck` 通过
 - [x] **TP-801** 文档：`CHANGES.md` 增加条目；`guidebook/`（如适用）补充 TunnelPattern 用法；`API.md`（如 API 面变更） — 文件：`CHANGES.md`（新增 CHANGELOG-PR:24 条目）、`guidebook/ae2-mechanics/tunnel-pattern.md`（新，英文）、`guidebook/_zh_cn/ae2-mechanics/tunnel-pattern.md`（新，中文）、`guidebook/items-blocks-machines/patterns.md` 与 `_zh_cn` 版（item_ids 增加 `ae2:tunnel_pattern` + 章节引用）、`API.md`（Internal APIs 补充 isInputOnly/getInputOnlyUuid/getInputOnlyPattern 变更说明） — 验证：guidebook front-matter 校验通过、`validateResources` 通过
-- [ ] **TP-802** 提交流程：全部改动提交到 `TunnelPattern` 分支（提交信息 `TP-xxx: ...`），推送后 `.github/workflows/tunnel-pattern-ci.yml` 全绿（plan-check + build） — 验证：GitHub Actions 结果
-- [ ] **TP-803** 交叉评审：按 `agents.md` Reviewer 角色逐条核对 DOD，必要时开 PR 至 `forge/1.20.1` — 验证：评审清单逐项勾选
+- [x] **TP-802** 提交流程：全部改动提交到 `TunnelPattern` 分支（提交信息 `TP-xxx: ...`），推送后 `.github/workflows/tunnel-pattern-ci.yml` 全绿（plan-check + build） — 验证：GitHub Actions——本推送 `TunnelPattern CI` 与 `Build and Test` 均 success（含 plan-check 与完整构建）
+- [x] **TP-803** 交叉评审：按 `agents.md` Reviewer 角色逐条核对 DOD，必要时开 PR 至 `forge/1.20.1` — 验证：评审清单逐项勾选
+  - 向后兼容 ✔：`IPatternDetails`/`ICraftingService` 仅新增默认方法；`encodeProcessingPattern` 语义不变；既有样板解码路径零回归（475 用例仅剩基线环境固有 CubeBuilderTest）
+  - 防环防溢出 ✔：`TunnelPatternExpander` 展开栈 + 父模式链 + `multiplyExact`，专项测试覆盖（自环/间接环/溢出）
+  - NBT 规范 ✔：键名固定 `tunnel`/`tunnelUuid`；UUID 解析失败走拒绝路径（decode 返回 null / 展开失败）
+  - 错误路径 ✔：畸形输入不消耗库存（extractPatternInputs 返回 null）、坏样板回退其他样板、供应器忽略 input-only
+  - 测试覆盖 ✔：9 个隧道测试类 40+ 用例 + 全量 475 用例
+  - PR：已创建 [PR #1](https://github.com/LowDragEnergistics/AE2-UELM/pull/1)（TunnelPattern → forge/1.20.1），状态 OPEN / MERGEABLE，全部检查通过
 
 ---
 
