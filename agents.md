@@ -26,9 +26,9 @@
    任何地方不得另造键名；UUID 解析失败必须走"拒绝该样板"路径（InvalidPattern 语义），不得静默忽略。
 5. **防环与防溢出**：运行时展开必须同时具备——展开栈防环、父模式链防环、`Math.multiplyExact` 防溢出；
    三者缺一不可，评审重点核对。
-6. **样式**：遵循仓库 Spotless 配置（`codeformat/`），提交前必须 `./gradlew spotlessApply`；
+6. **样式**：遵循仓库 Spotless 配置（`codeformat/`）与第 6 节开发规范（整合自 GTNH Code Style），提交前必须 `./gradlew spotlessApply`；
    禁止通配符 import；文件须带 LGPL 许可头（与同包文件一致）。
-7. **编码前校验**：编码路径（TP-200~203）必须覆盖——零输出时仅当编码槽为 TunnelPattern 才允许；
+7. **编码前校验**：编码路径（TP-200~203）必须覆盖——处理模式且无输出 → 编码为 TunnelPattern（编码槽内已有 TunnelPattern 则复用其 UUID，否则随机生成）；
    载入（load-from-item）路径必须同步支持 Tunnel 样板。
 8. **测试纪律**：每个里程碑至少包含一条可执行验证命令；仿真测试必须包含"失败回滚"断言，不得只测成功路径。
 
@@ -74,3 +74,107 @@
 
 **门禁语义**：plan-check 失败 ⇒ 构建不启动；条目 ID 重复或已完结里程碑残留未完成项 ⇒ 直接红灯。
 分支保护建议（仓库管理员设置）：`TunnelPattern` 分支要求 `TunnelPattern CI` 通过后方可合并。
+
+## 6. 开发规范（整合自 GTNH Code Style）
+
+> 来源：[gtnh.huijiwiki.com/wiki/代码风格](https://gtnh.huijiwiki.com/wiki/%E4%BB%A3%E7%A0%81%E9%A3%8E%E6%A0%BC)（GTNH 官方 Code Style 中文版，2026-08-01 译自 [gtnh.miraheze.org/wiki/Code_Style](https://gtnh.miraheze.org/wiki/Code_Style)）。
+> 适用范围：本仓库全部 Java 代码。与第 2 节硬性规则共同构成代理的代码行为约束。
+> 冲突仲裁：与仓库 Spotless 配置 / CI 门禁冲突时，以本仓库配置为准。
+
+### 6.1 总原则
+
+- 代码被阅读的次数远多于被编写的次数；维护成本占软件生命周期成本的绝大部分；一致风格让协作更轻松、评审更快。
+- 本规范鼓励写出好代码；**始终运用良好判断力**：若遵循指南导致不必要的繁琐或降低可读性，可读性优先；
+  但若“更可读”的变体存在隐患或陷阱，可读性可以让位于安全性与正确性。
+- 主要参考：Oracle《Java 编程语言代码规范》、Google Java 风格指南；推荐阅读《Clean Code》《Effective Java》。
+
+### 6.2 工具链
+
+- 仓库使用 **Spotless** 检查换行、空格与缩进（见 `build.gradle` 的 spotless 配置，JSON 由 biome 步骤校验）；
+  提交前必须 `./gradlew spotlessApply`（本机无法执行 spotlessJson 时，至少保证 `spotlessJavaCheck` 通过并由 CI 兜底）。
+
+### 6.3 文件组织
+
+- 单文件尽量避免超过 **2000 行**。
+- 类/接口内部声明顺序：
+  1. 类/接口文档注释（`/** */`，可选）
+  2. `class`/`interface` 语句
+  3. 类级实现注释（`/* */`，可选）
+  4. static 变量（顺序：public → protected → 包级 → private）
+  5. 实例变量（顺序：public → protected → 包级 → private）
+  6. 构造方法
+  7. 方法——**按功能分组**而非按作用域/可访问性分组（私有辅助方法可置于两个公有方法之间），以利阅读。
+
+### 6.4 注释
+
+- 不要注释掉代码——直接删除；需要时从 Git 历史找回。
+- 避免易随代码演变而过时的注释；注释频率高可能反映代码质量不佳——考虑重写使代码自明。
+- 注释不要用星号等字符围成方框。
+- 风格：单行用 `//`，跨行用块注释：
+  ```java
+  if (foo > 1) {
+      // Do a double-flip.
+      return bar.performDoubleFlip();
+  }
+
+  /*
+   * Here is a block comment.
+   */
+  ```
+- `@author` 标签不强制也不禁止（版本控制系统已记录作者信息）。
+
+### 6.5 声明
+
+- 一行多变量仅限紧密关联者（如 3D 坐标 `int x, y, z;`）；**禁止同一行声明不同类型**（如 `int foo, fooarray[];`）。
+- 尽量在声明处初始化；唯一例外是初始值依赖先前的计算。
+- 只在块（`{...}` 包围的代码）的开头声明变量，不延迟到首次使用处。
+
+### 6.6 语句
+
+- `switch` 推荐现代箭头形式（本仓库 Java 17 支持）：
+  ```java
+  switch (condition) {
+      case ABC, DEF, KLM -> { statements; }
+      case XYZ -> { statements; }
+      default -> { statements; }
+  }
+  ```
+
+### 6.7 命名
+
+| 标识符 | 规则 | 示例 |
+|---|---|---|
+| 类 | 名词、UpperCamelCase、简洁描述性、用完整单词避免缩写 | `class Raster`、`class ImageSprite` |
+| 接口 | 与类相同大写风格；**禁止 “I” 前缀** | `interface Storing`（而非 `IStoring`） |
+| 方法 | 动词、lowerCamelCase | `run()`、`getBackgroundColor()` |
+| 变量 | lowerCamelCase、以字母开头（禁 `_`/`$` 开头）、简短但能一眼看出用途 | `String currentAccountKey;` |
+
+### 6.8 日志格式（GTNH 特定）
+
+- 大多数日志消息每行一次写入调用；单句消息不需要大写首字母；多句消息首字母大写。
+
+### 6.9 编程实践
+
+- **访问控制**：无充分理由不得将实例/类变量设为 `public`；通常经方法调用副作用读写。
+- **常量**：禁止硬编码魔法值，使用命名良好的常量：
+  ```java
+  int CONSTANT_NAME = 16281;
+  methodName(CONSTANT_NAME);
+  ```
+- **赋值**：避免单语句给多个变量赋相同值（`fooBar.fChar = barFoo.lchar = 'c';` → AVOID）。
+- **废弃 API**：`@Deprecated` 必须注释替代方案；`@Deprecated` 注解与 `@deprecated` javadoc 标签必须成对存在：
+  ```java
+  /**
+   * @deprecated use {@link DBHelper#update(java.lang.String, java.util.Map)}
+   */
+  @Deprecated(forRemoval = true)
+  public int insert(String request, Map<String, ?> params) { ... }
+  ```
+
+### 6.10 运算符与括号
+
+- 混合运算符表达式中多用括号消除优先级歧义：
+  ```java
+  if ((a == b) && (c == d)) // OK
+  if (a == b && c == d)     // AVOID!
+  ```
