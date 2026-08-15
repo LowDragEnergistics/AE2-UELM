@@ -26,6 +26,7 @@ AGENTS_REQUIRED_SECTIONS = [
     ("4. 完成定义", "DOD"),
     ("5. CI/CD 说明", "CI/CD"),
     ("6. 开发规范", "Dev standards"),
+    ("7. 版本管理", "Version management"),
 ]
 
 MILESTONE_RE = re.compile(r"^## M\d+ .+")
