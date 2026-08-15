@@ -214,6 +214,19 @@ public abstract class EncodedPatternItem extends AEBaseItem {
         if (!author.isEmpty()) {
             lines.add(GuiText.EncodedBy.text(author).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
+
+        if (details.isInputOnly()) {
+            // Input-only (tunnel) patterns are virtual references: describe how they are used.
+            lines.add(GuiText.TunnelPatternInfo1.text().withStyle(ChatFormatting.GRAY));
+            lines.add(GuiText.TunnelPatternInfo2.text().withStyle(ChatFormatting.GRAY));
+            lines.add(GuiText.TunnelPatternInfo3.text().withStyle(ChatFormatting.GRAY));
+            lines.add(GuiText.TunnelPatternInfo4.text().withStyle(ChatFormatting.GRAY));
+
+            var tunnelUuid = details.getInputOnlyUuid();
+            if (tunnelUuid != null) {
+                lines.add(GuiText.TunnelPatternUuid.text(tunnelUuid.toString()).withStyle(ChatFormatting.GRAY));
+            }
+        }
     }
 
     @Deprecated

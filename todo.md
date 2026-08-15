@@ -90,14 +90,12 @@
 
 ---
 
-## M6 工具提示与本地化
+## M6 工具提示与本地化 ✅
 
 > 移植 `GuiText.TunnelPatternInfo1~4` 与 `ItemEncodedPattern.addInformation` 分支。
 
-- [ ] **TP-600** 工具提示：`TunnelPatternItem`/`EncodedPatternItem` 的 `appendHoverText` 增加 tunnel 信息（4 行说明 + UUID） — 文件：`src/main/java/appeng/crafting/pattern/EncodedPatternItem.java`（或 TunnelPatternItem） — 验证：截图/单测断言 hover 行
-- [ ] **TP-601** 本地化：`assets/ae2/lang/en_gb.json` 增加 `item.ae2.tunnel_pattern` 及 4 条提示键（参考 1.7.10 英文文案）；同步 `zh_cn.json` 中文翻译 — 文件：`src/main/resources/assets/ae2/lang/en_gb.json`、`zh_cn.json` — 验证：datagen/spotless json 通过；游戏内中文显示正确
-
----
+- [x] **TP-600** 工具提示：`TunnelPatternItem`/`EncodedPatternItem` 的 `appendHoverText` 增加 tunnel 信息（4 行说明 + UUID） — 文件：`src/main/java/appeng/crafting/pattern/EncodedPatternItem.java`（`appendHoverText` 对 `details.isInputOnly()` 追加灰色 4 行说明 + `TunnelPatternUuid` 行）、`src/main/java/appeng/core/localization/GuiText.java`（新增 `TunnelPatternInfo1~4`、`TunnelPatternUuid` 五个枚举键） — 验证：`TunnelPatternTooltipTest` 3 用例（隧道样板显示 4 键 + UUID 参数；处理样板/畸形隧道物品不显示；结构化断言转译键，与语言加载状态无关）
+- [x] **TP-601** 本地化：`assets/ae2/lang/en_gb.json` 增加 `item.ae2.tunnel_pattern` 及 4 条提示键（参考 1.7.10 英文文案）；同步 `zh_cn.json` 中文翻译 — 文件：`src/main/resources/assets/ae2/lang/en_gb.json`（5 条新键）、`zh_cn.json`（5 条新键：编码处理样板时用作输入/其输入会被内联进所编码的样板/按 UUID 索引…/或重命名…/UUID：%s） — 验证：`runData` 生成 en_us.json 5 键；lang JSON 语法校验通过；spotless/validateResources 通过
 
 ## M7 测试
 
