@@ -54,8 +54,8 @@ public class AEProcessingPattern implements IPatternDetails {
             inputs[i] = new Input(condensedInputs[i]);
         }
 
-        // Ordering is preserved by condenseStacks
-        this.condensedOutputs = AEPatternHelper.condenseStacks(sparseOutputs);
+        // Ordering is preserved by condenseStacks. Input-only (tunnel) patterns have no outputs.
+        this.condensedOutputs = AEPatternHelper.condenseStacksOrEmpty(sparseOutputs);
     }
 
     @Override
@@ -98,8 +98,9 @@ public class AEProcessingPattern implements IPatternDetails {
 
     @Override
     public void pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
-        if (sparseInputs.length == inputs.length) {
-            // No compression -> no need to reorder
+        if (sparseInputs.length == inputs.length || !coversAllSparseInputs(inputHolder)) {
+            // No compression, or the holder was expanded from tunnel references (it contains keys that are not part
+            // of the sparse inputs): push everything flat.
             IPatternDetails.super.pushInputsToExternalInventory(inputHolder, inputSink);
             return;
         }
@@ -129,11 +130,29 @@ public class AEProcessingPattern implements IPatternDetails {
         }
     }
 
-    private static class Input implements IInput {
+    /**
+     * @return true if every sparse input is covered by the input holder. Tunnel references that were inlined during
+     *         input extraction are not part of the sparse inputs, in which case this returns false and the holder is
+     *         pushed flat instead of being reordered.
+     */
+    private boolean coversAllSparseInputs(KeyCounter[] inputHolder) {
+        var allInputs = new KeyCounter();
+        for (var counter : inputHolder) {
+            allInputs.addAll(counter);
+        }
+        for (var sparseInput : sparseInputs) {
+            if (sparseInput != null && allInputs.get(sparseInput.what()) < sparseInput.amount()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static class Input implements IInput {
         private final GenericStack[] template;
         private final long multiplier;
 
-        private Input(GenericStack stack) {
+        Input(GenericStack stack) {
             this.template = new GenericStack[] { new GenericStack(stack.what(), 1) };
             this.multiplier = stack.amount();
         }

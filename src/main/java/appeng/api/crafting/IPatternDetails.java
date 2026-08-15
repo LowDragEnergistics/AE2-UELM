@@ -23,6 +23,8 @@
 
 package appeng.api.crafting;
 
+import java.util.UUID;
+
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.world.item.crafting.Recipe;
@@ -64,6 +66,22 @@ public interface IPatternDetails {
      * The outputs of this pattern. <b>The return array or any of its stacks must never be edited</b>.
      */
     GenericStack[] getOutputs();
+
+    /**
+     * @return true if this pattern is an input-only "tunnel" pattern, which has no outputs and is used as an input
+     *         reference from other processing patterns. Such patterns are not directly craftable.
+     */
+    default boolean isInputOnly() {
+        return false;
+    }
+
+    /**
+     * @return the UUID identifying this input-only pattern, or null if the pattern is not input-only.
+     */
+    @Nullable
+    default UUID getInputOnlyUuid() {
+        return null;
+    }
 
     /**
      * The user who encoded this pattern.

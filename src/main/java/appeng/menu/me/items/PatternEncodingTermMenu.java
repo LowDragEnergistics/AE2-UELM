@@ -21,6 +21,7 @@ package appeng.menu.me.items;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import com.mojang.datafixers.util.Pair;
 
@@ -51,6 +52,7 @@ import appeng.client.gui.me.items.PatternEncodingTermScreen;
 import appeng.core.definitions.AEItems;
 import appeng.crafting.pattern.AECraftingPattern;
 import appeng.crafting.pattern.AEProcessingPattern;
+import appeng.crafting.pattern.TunnelPatternItem;
 import appeng.helpers.IMenuCraftingPacket;
 import appeng.helpers.IPatternTerminalMenuHost;
 import appeng.menu.SlotSemantics;
@@ -361,12 +363,22 @@ public class PatternEncodingTermMenu extends MEStorageMenu implements IMenuCraft
         }
 
         var outputs = new GenericStack[encodedOutputsInv.size()];
+        boolean hasOutputs = false;
         for (int slot = 0; slot < encodedOutputsInv.size(); slot++) {
             outputs[slot] = encodedOutputsInv.getStack(slot);
+            if (outputs[slot] != null) {
+                hasOutputs = true;
+            }
         }
-        if (outputs[0] == null) {
-            // The first output slot is required
-            return null;
+
+        if (!hasOutputs) {
+            // Input-only processing pattern: encode it as a tunnel pattern. If the encoded pattern slot already
+            // holds a tunnel pattern, reuse its UUID so that patterns referencing it keep working.
+            var uuid = TunnelPatternItem.getTunnelUuid(this.encodedPatternSlot.getItem());
+            if (uuid == null) {
+                uuid = UUID.randomUUID();
+            }
+            return PatternDetailsHelper.encodeTunnelPattern(inputs, uuid, getPatternInfo());
         }
 
         return PatternDetailsHelper.encodeProcessingPattern(inputs, outputs, getPatternInfo());

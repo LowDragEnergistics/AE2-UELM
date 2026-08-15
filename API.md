@@ -304,6 +304,10 @@ cells for any stored item key. Due to the storage math still being different for
 there are still key-type specific cells, which are all based on the same class `BasicStorageCell`,
 which doesn't have a guaranteed API however (this is an improvement for later).
 
+The pattern APIs gained support for input-only "tunnel" patterns: `IPatternDetails` now has default
+`isInputOnly()` and `getInputOnlyUuid()` methods, and `ICraftingService` gained a default
+`getInputOnlyPattern(UUID)` lookup. All additions are backward compatible for existing implementations.
+
 ## Crank
 
 The crank uses `ICrankable` to inject energy into the block it's attached to, when the player turns the crank.

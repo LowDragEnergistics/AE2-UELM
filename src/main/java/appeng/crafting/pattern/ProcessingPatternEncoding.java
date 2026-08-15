@@ -19,8 +19,11 @@
 package appeng.crafting.pattern;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import com.google.common.base.Preconditions;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -87,7 +90,46 @@ class ProcessingPatternEncoding {
         tag.putString(NBT_AUTHOR, info.author());
     }
 
-    private static ListTag encodeStackList(GenericStack[] stacks) {
+    /**
+     * Encodes an input-only "tunnel" pattern: it has inputs but no outputs, and is identified by a UUID.
+     */
+    public static void encodeTunnelPattern(CompoundTag tag, GenericStack[] sparseInputs, UUID uuid, PatternInfo info) {
+        info = info == null ? PatternInfo.EMPTY : info;
+
+        tag.put(NBT_INPUTS, encodeStackList(sparseInputs));
+        tag.put(NBT_OUTPUTS, new ListTag());
+        tag.putString(NBT_AUTHOR, info.author());
+        TunnelPatternItem.writeTunnelUuid(tag, uuid);
+    }
+
+    /**
+     * @return true if the given tag belongs to an input-only "tunnel" pattern.
+     */
+    public static boolean isInputOnly(CompoundTag nbt) {
+        Objects.requireNonNull(nbt, "Pattern must have a tag.");
+        return nbt.getBoolean(TunnelPatternItem.TAG_TUNNEL);
+    }
+
+    /**
+     * @return the tunnel pattern UUID stored in the given tag, or null if the tag is not a valid tunnel pattern.
+     */
+    @Nullable
+    public static UUID getTunnelUuid(CompoundTag nbt) {
+        if (!isInputOnly(nbt)) {
+            return null;
+        }
+        String rawUuid = nbt.getString(TunnelPatternItem.TAG_TUNNEL_UUID);
+        if (rawUuid.isEmpty()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(rawUuid);
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
+    }
+
+    static ListTag encodeStackList(GenericStack[] stacks) {
         ListTag tag = new ListTag();
         boolean foundStack = false;
         for (var stack : stacks) {

@@ -20,6 +20,7 @@ package appeng.crafting.execution;
 
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.function.Function;
 
 import com.google.common.collect.Iterables;
 
@@ -37,6 +38,7 @@ import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.inv.ICraftingInventory;
 import appeng.crafting.inv.ListCraftingInventory;
+import appeng.crafting.pattern.TunnelPatternExpander;
 
 /**
  * Helper functions used by the CPU.
@@ -103,10 +105,22 @@ public class CraftingCpuHelper {
             ICraftingInventory sourceInv,
             Level level,
             KeyCounter expectedOutputs,
-            KeyCounter expectedContainerItems) {
+            KeyCounter expectedContainerItems,
+            @Nullable Function<UUID, IPatternDetails> tunnelLookup) {
+
+        // Inline tunnel pattern references so that execution matches the simulation: the CPU inventory is stocked
+        // with the expanded inputs, not with tunnel pattern items.
+        IPatternDetails.IInput[] inputs = details.getInputs();
+        if (tunnelLookup != null) {
+            var expanded = TunnelPatternExpander.expandInputs(inputs, tunnelLookup, null);
+            if (expanded == null) {
+                // Invalid tunnel reference: the inputs cannot be extracted, so this pattern cannot be pushed.
+                return null;
+            }
+            inputs = expanded.toArray(IPatternDetails.IInput[]::new);
+        }
 
         // Extract inputs into the container.
-        var inputs = details.getInputs();
         KeyCounter[] inputHolder = new KeyCounter[inputs.length];
         boolean found = true;
 

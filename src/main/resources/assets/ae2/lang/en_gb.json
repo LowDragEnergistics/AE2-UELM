@@ -2,5 +2,11 @@
   "achievement.ae2.ChargedQuartz": "Shocking",
   "gui.ae2.Gray": "Grey",
   "gui.ae2.LightGray": "Light Grey",
-  "item.ae2.color_applicator": "Colour Applicator"
+  "gui.ae2.TunnelPatternInfo1": "Use as an input when encoding processing patterns.",
+  "gui.ae2.TunnelPatternInfo2": "Its inputs are inlined into the encoded pattern.",
+  "gui.ae2.TunnelPatternInfo3": "Indexed by UUID, so you can change its contents",
+  "gui.ae2.TunnelPatternInfo4": "or rename it without updating referencing patterns.",
+  "gui.ae2.TunnelPatternUuid": "UUID: %s",
+  "item.ae2.color_applicator": "Colour Applicator",
+  "item.ae2.tunnel_pattern": "Tunnel Pattern"
 }

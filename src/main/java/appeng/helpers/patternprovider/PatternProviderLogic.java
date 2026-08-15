@@ -255,6 +255,13 @@ public class PatternProviderLogic implements InternalInventoryHost, ICraftingPro
             var details = PatternDetailsHelper.decodePattern(stack, this.host.getBlockEntity().getLevel());
 
             if (details != null) {
+                // Input-only (tunnel) patterns are virtual references: they never run as a job themselves, and their
+                // contents are inlined into referencing patterns at craft time. Ignore them entirely so that the
+                // provider never tries to supply their inputs or push them anywhere.
+                if (details.isInputOnly()) {
+                    continue;
+                }
+
                 patterns.add(details);
 
                 for (var iinput : details.getInputs()) {

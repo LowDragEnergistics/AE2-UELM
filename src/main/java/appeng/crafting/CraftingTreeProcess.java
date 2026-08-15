@@ -18,8 +18,10 @@
 
 package appeng.crafting;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import appeng.api.config.Actionable;
 import appeng.api.crafting.IPatternDetails;
@@ -27,6 +29,7 @@ import appeng.api.networking.crafting.ICraftingService;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.crafting.inv.CraftingSimulationState;
+import appeng.crafting.pattern.TunnelPatternExpander;
 
 /**
  * A crafting tree process is what represents a pattern in the crafting process. It has a parent node (its output), and
@@ -56,13 +59,41 @@ public class CraftingTreeProcess {
 
         updateLimitQty();
 
-        final IPatternDetails.IInput[] inputs = this.details.getInputs();
-        for (int x = 0; x < inputs.length; ++x) {
-            var input = inputs[x];
+        // Inline tunnel pattern references: replace tunnel item inputs with the referenced input-only pattern's
+        // inputs, multiplied by the reference amount. On failure (cycle, overflow, malformed reference) the pattern
+        // is marked as impossible so that other patterns for the same output are tried instead.
+        var expandedInputs = TunnelPatternExpander.expandInputs(details.getInputs(), cc::getInputOnlyPattern,
+                getAncestorPatterns());
+        if (expandedInputs == null) {
+            this.possible = false;
+            return;
+        }
+
+        for (var input : expandedInputs) {
             var firstInput = input.getPossibleInputs()[0];
-            this.nodes.put(new CraftingTreeNode(cc, job, firstInput.what(), firstInput.amount(), this, x),
+            this.nodes.put(
+                    new CraftingTreeNode(cc, job, firstInput.what(), firstInput.amount(), this, input),
                     input.getMultiplier());
         }
+    }
+
+    /**
+     * The chain of patterns from the root of the crafting tree down to (and including) this process. Used as an
+     * additional cycle guard when expanding tunnel references.
+     */
+    private Set<IPatternDetails> getAncestorPatterns() {
+        var chain = new HashSet<IPatternDetails>();
+        var node = this.parent;
+        while (node != null) {
+            var process = node.getParentProcess();
+            if (process == null) {
+                break;
+            }
+            chain.add(process.details);
+            node = process.parent;
+        }
+        chain.add(this.details);
+        return chain;
     }
 
     /**

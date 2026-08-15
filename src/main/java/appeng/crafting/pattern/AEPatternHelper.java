@@ -37,4 +37,19 @@ final class AEPatternHelper {
         }
         return out;
     }
+
+    /**
+     * Like {@link #condenseStacks}, but returns an empty array instead of throwing when there is no stack at all. Used
+     * for the outputs of input-only (tunnel) patterns.
+     */
+    public static GenericStack[] condenseStacksOrEmpty(GenericStack[] sparseInput) {
+        boolean hasStack = false;
+        for (var input : sparseInput) {
+            if (input != null) {
+                hasStack = true;
+                break;
+            }
+        }
+        return hasStack ? condenseStacks(sparseInput) : new GenericStack[0];
+    }
 }

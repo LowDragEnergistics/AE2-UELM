@@ -315,6 +315,12 @@ public class CraftingService implements ICraftingService, IGridServiceProvider {
         return this.craftingProviders.getCraftingFor(whatToCraft);
     }
 
+    @Nullable
+    @Override
+    public IPatternDetails getInputOnlyPattern(UUID uuid) {
+        return this.craftingProviders.getInputOnlyPattern(uuid);
+    }
+
     @Override
     public void refreshNodeCraftingProvider(IGridNode node) {
         this.craftingProviders.removeProvider(node);

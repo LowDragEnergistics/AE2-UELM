@@ -25,6 +25,7 @@ package appeng.api.crafting;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.common.base.Preconditions;
@@ -111,6 +112,30 @@ public final class PatternDetailsHelper {
     @Deprecated
     public static ItemStack encodeProcessingPattern(GenericStack[] in, GenericStack[] out) {
         return encodeProcessingPattern(in, out, PatternInfo.EMPTY);
+    }
+
+    /**
+     * Encodes an input-only "tunnel" pattern, which can be used as an input when encoding other processing patterns.
+     * Its inputs are inlined (multiplied by the referenced stack size) into referencing patterns at craft time.
+     *
+     * @param in   The inputs of the tunnel pattern.
+     * @param uuid The UUID that identifies this tunnel pattern. Reuse the UUID of an existing tunnel pattern when
+     *             re-encoding it to keep referencing patterns valid.
+     * @param info Optional pattern info.
+     * @return A new encoded tunnel pattern.
+     * @throws IllegalArgumentException If in contains only empty stacks.
+     */
+    public static ItemStack encodeTunnelPattern(GenericStack[] in, UUID uuid, PatternInfo info) {
+        return AEItems.TUNNEL_PATTERN.asItem().encodeTunnelPattern(in, uuid, info);
+    }
+
+    public static ItemStack encodeTunnelPattern(GenericStack[] in, UUID uuid, String author) {
+        return encodeTunnelPattern(in, uuid, PatternInfo.ofAuthor(author));
+    }
+
+    @Deprecated
+    public static ItemStack encodeTunnelPattern(GenericStack[] in, UUID uuid) {
+        return encodeTunnelPattern(in, uuid, PatternInfo.EMPTY);
     }
 
     /**
