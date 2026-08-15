@@ -98,8 +98,9 @@ public class AEProcessingPattern implements IPatternDetails {
 
     @Override
     public void pushInputsToExternalInventory(KeyCounter[] inputHolder, PatternInputSink inputSink) {
-        if (sparseInputs.length == inputs.length) {
-            // No compression -> no need to reorder
+        if (sparseInputs.length == inputs.length || !coversAllSparseInputs(inputHolder)) {
+            // No compression, or the holder was expanded from tunnel references (it contains keys that are not part
+            // of the sparse inputs): push everything flat.
             IPatternDetails.super.pushInputsToExternalInventory(inputHolder, inputSink);
             return;
         }
@@ -127,6 +128,24 @@ public class AEProcessingPattern implements IPatternDetails {
             inputSink.pushInput(key, amount);
             allInputs.remove(key, amount);
         }
+    }
+
+    /**
+     * @return true if every sparse input is covered by the input holder. Tunnel references that were inlined during
+     *         input extraction are not part of the sparse inputs, in which case this returns false and the holder is
+     *         pushed flat instead of being reordered.
+     */
+    private boolean coversAllSparseInputs(KeyCounter[] inputHolder) {
+        var allInputs = new KeyCounter();
+        for (var counter : inputHolder) {
+            allInputs.addAll(counter);
+        }
+        for (var sparseInput : sparseInputs) {
+            if (sparseInput != null && allInputs.get(sparseInput.what()) < sparseInput.amount()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static class Input implements IInput {

@@ -197,7 +197,8 @@ public class CraftingCpuLogic {
             // Contains the inputs for the pattern.
             @Nullable
             var craftingContainer = CraftingCpuHelper.extractPatternInputs(
-                    details, inventory, level, expectedOutputs, expectedContainerItems);
+                    details, inventory, level, expectedOutputs, expectedContainerItems,
+                    craftingService::getInputOnlyPattern);
 
             // Try to push to each provider.
             for (var provider : craftingService.getProviders(details)) {
@@ -243,7 +244,7 @@ public class CraftingCpuLogic {
                     expectedOutputs.reset();
                     expectedContainerItems.reset();
                     craftingContainer = CraftingCpuHelper.extractPatternInputs(details, inventory,
-                            level, expectedOutputs, expectedContainerItems);
+                            level, expectedOutputs, expectedContainerItems, craftingService::getInputOnlyPattern);
                 }
             }
 

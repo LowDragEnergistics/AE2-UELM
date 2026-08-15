@@ -80,13 +80,13 @@
 
 ---
 
-## M5 CPU 预检与执行联动
+## M5 CPU 预检与执行联动 ✅
 
 > 移植 `CraftingCPUCluster.getExpandedCondensedInputs/getExpandedInputs` 的预检语义：
 > 作业启动前确认展开后的输入可提取；执行时不再推送 TunnelPattern 物品本身到机器。
 
-- [ ] **TP-500** CPU 预检：`CraftingCpuHelper`（或 `CraftingCpuLogic` 启动路径）对处理模式先做展开再检查输入可提取（`canCraft` 等价物） — 文件：`src/main/java/appeng/crafting/execution/CraftingCpuHelper.java`（如涉及） — 验证：单测/仿真断言"引用缺失 UUID 时作业拒绝启动"
-- [ ] **TP-501** 输入推送排除虚拟项：`PatternProviderLogic`/`PatternProviderBlockEntity` 推送模式输入时跳过 TunnelPattern 物品（其为纯虚拟引用，不产生真实堆叠） — 文件：`src/main/java/appeng/blockentity/crafting/PatternProviderBlockEntity.java`（及配套 logic 类） — 验证：仿真断言机器收到的输入不含 tunnel 物品
+- [x] **TP-500** CPU 预检：`CraftingCpuHelper`（或 `CraftingCpuLogic` 启动路径）对处理模式先做展开再检查输入可提取（`canCraft` 等价物） — 文件：`src/main/java/appeng/crafting/execution/CraftingCpuHelper.java`（`extractPatternInputs` 新增 `tunnelLookup` 参数，经 `TunnelPatternExpander` 展开后再提取；展开失败/提取不足 → 返回 null 且不消耗库存）、`src/main/java/appeng/crafting/execution/CraftingCpuLogic.java`（`executeCrafting` 两处调用传入 `craftingService::getInputOnlyPattern`）、`src/main/java/appeng/crafting/pattern/AEProcessingPattern.java`（`pushInputsToExternalInventory` 新增 `coversAllSparseInputs` 回退：展开后的 holder 含非 sparse 键时改平铺推送，避免压缩+隧道组合下按 sparse 重排抛异常） — 验证：`CraftingCpuHelperTest` 4 用例（展开提取成功/缺失 UUID 返回 null 且库存零消耗/平铺回退/无隧道压缩样板仍走原重排路径零回归）
+- [x] **TP-501** 输入推送排除虚拟项：`PatternProviderLogic`/`PatternProviderBlockEntity` 推送模式输入时跳过 TunnelPattern 物品（其为纯虚拟引用，不产生真实堆叠） — 文件：`src/main/java/appeng/helpers/patternprovider/PatternProviderLogic.java`（`updatePatterns` 跳过 `isInputOnly()`：不进入 `patterns` 也不污染 `patternInputs`） — 验证：`PatternProviderLogicTest` 3 用例（纯隧道样板 → `getAvailablePatterns` 为空；普通样板保留；隧道不污染输入集合）；仿真侧 `TunnelSimulationTest.usedMatch` 已断言计划用量只含展开后的真实物品
 
 ---
 
