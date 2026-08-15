@@ -26,8 +26,10 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import appeng.api.crafting.PatternInfo;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
 
 /**
@@ -101,5 +103,20 @@ public class TunnelPatternItem extends ProcessingPatternItem {
         var stack = new ItemStack(this);
         ProcessingPatternEncoding.encodeTunnelPattern(stack.getOrCreateTag(), sparseInputs, uuid, info);
         return stack;
+    }
+
+    @Nullable
+    @Override
+    public AETunnelPattern decode(AEItemKey what, Level level) {
+        // Tunnel pattern items always carry input-only data; anything else is malformed.
+        if (what == null || !what.hasTag() || !ProcessingPatternEncoding.isInputOnly(what.getTag())) {
+            return null;
+        }
+
+        try {
+            return new AETunnelPattern(what);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

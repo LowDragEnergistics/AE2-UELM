@@ -52,16 +52,17 @@
 
 ---
 
-## M3 模式解析（AETunnelPattern + Decoder）
+## M3 模式解析（AETunnelPattern + Decoder） ✅
 
 > 移植 `UltimatePatternHelper` 的 input-only 语义：必须有输入、必须无输出、必须有 UUID，否则判 InvalidPattern。
 
-- [ ] **TP-300** 新增 `appeng/crafting/pattern/AETunnelPattern.java implements IPatternDetails`：
+- [x] **TP-300** 新增 `appeng/crafting/pattern/AETunnelPattern.java implements IPatternDetails`：
   - `isCraftable()` 返回 false；`getOutputs()` 返回空数组；`getInputs()` 返回浓缩输入
   - 新增方法（或接口默认实现）：`isInputOnly()`、`getInputOnlyUuid()`，并在 `IPatternDetails` 增加默认方法（默认 false/null，保证第三方实现兼容）
   - 构造校验：输入非空、输出为空、UUID 合法，否则抛异常（与现有 decode 失败语义一致）
-  - 文件：`src/main/java/appeng/crafting/pattern/AETunnelPattern.java`、`src/main/java/appeng/api/crafting/IPatternDetails.java` — 验证：decode 单测覆盖合法/非法三种输入（无输入、有输出、UUID 缺失/非法）
-- [ ] **TP-301** `AEPatternDecoder` / `TunnelPatternItem.decode` 接入：tunnel NBT 存在 → 返回 `AETunnelPattern`；不存在 → 走原 `AEProcessingPattern` 路径（向后兼容） — 文件：`src/main/java/appeng/crafting/pattern/AEPatternDecoder.java`（如需要）、`src/main/java/appeng/items/misc/TunnelPatternItem.java` — 验证：`PatternDetailsHelper.decodePattern` 单测
+  - 文件：`src/main/java/appeng/crafting/pattern/AETunnelPattern.java`、`src/main/java/appeng/api/crafting/IPatternDetails.java` — 验证：`TunnelPatternEncodingTest` 扩展至 12 用例——合法解码（isInputOnly/getInputOnlyUuid/输入输出/作者）与 4 类非法输入（无输入、有输出、UUID 缺失、UUID 非法）均返回 null
+  - 注：实现采用 `extends AEProcessingPattern`（而非直接 implements），复用输入浓缩/equals/hashCode/作者等既有逻辑，且 `PatternEncodingLogic.loadEncodedPattern` 的 `instanceof AEProcessingPattern` 分支自动兼容（M2 载入往返无需改动即继续生效）
+- [x] **TP-301** `AEPatternDecoder` / `TunnelPatternItem.decode` 接入：tunnel NBT 存在 → 返回 `AETunnelPattern`；不存在 → 走原 `AEProcessingPattern` 路径（向后兼容） — 文件：`src/main/java/appeng/crafting/pattern/TunnelPatternItem.java`（重写 `decode(AEItemKey, Level)`；隧道物品上的非 tunnel 标记视为畸形 → null）、`src/main/java/appeng/me/service/helpers/NetworkCraftingProviders.java`（mount/unmount 跳过 `isInputOnly()`，防 `getPrimaryOutput()` AIOOBE）、`src/main/java/appeng/crafting/pattern/EncodedPatternItem.java`（客户端槽位显示 `getOutput` 对 input-only 返回 EMPTY，防客户端崩溃） — 验证：`PatternDetailsHelper.decodePattern` 单测覆盖；`NetworkCraftingProvidersTest` 2 用例不回归
 
 ---
 

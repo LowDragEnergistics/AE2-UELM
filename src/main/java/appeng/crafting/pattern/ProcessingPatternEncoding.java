@@ -129,7 +129,7 @@ class ProcessingPatternEncoding {
         }
     }
 
-    private static ListTag encodeStackList(GenericStack[] stacks) {
+    static ListTag encodeStackList(GenericStack[] stacks) {
         ListTag tag = new ListTag();
         boolean foundStack = false;
         for (var stack : stacks) {

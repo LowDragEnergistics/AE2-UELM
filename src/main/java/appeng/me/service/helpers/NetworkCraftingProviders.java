@@ -163,6 +163,12 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.merge(emitable, 1, Integer::sum);
             }
             for (var pattern : patterns) {
+                // Input-only (tunnel) patterns have no output and are not directly craftable. They are only used as
+                // input references from other patterns (indexed separately by UUID).
+                if (pattern.isInputOnly()) {
+                    continue;
+                }
+
                 // output -> pattern (for simulation)
                 var primaryOutput = pattern.getPrimaryOutput();
 
@@ -183,6 +189,11 @@ public class NetworkCraftingProviders {
                 methods.emitableItems.compute(emitable, (key, cnt) -> cnt == 1 ? null : cnt - 1);
             }
             for (var pattern : patterns) {
+                // See mount: input-only (tunnel) patterns are never mounted.
+                if (pattern.isInputOnly()) {
+                    continue;
+                }
+
                 var primaryOutput = pattern.getPrimaryOutput();
 
                 methods.craftableItemsList.remove(primaryOutput.what(), 1);

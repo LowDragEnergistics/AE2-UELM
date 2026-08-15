@@ -255,6 +255,12 @@ public abstract class EncodedPatternItem extends AEBaseItem {
         out = ItemStack.EMPTY;
 
         if (details != null) {
+            // Input-only (tunnel) patterns have no output to display.
+            if (details.isInputOnly()) {
+                SIMPLE_CACHE.put(item, out);
+                return out;
+            }
+
             var output = details.getPrimaryOutput();
 
             // Can only be an item or fluid stack.

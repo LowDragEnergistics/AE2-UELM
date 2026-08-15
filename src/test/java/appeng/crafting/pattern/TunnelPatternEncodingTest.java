@@ -9,18 +9,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
+import appeng.api.crafting.IPatternDetails;
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.crafting.PatternInfo;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
+import appeng.core.definitions.AEItems;
 import appeng.util.BootstrapMinecraft;
 
 @BootstrapMinecraft
@@ -79,12 +83,15 @@ class TunnelPatternEncodingTest {
         assertTrue(TunnelPatternItem.isTunnelPattern(stack));
         assertEquals(uuid, TunnelPatternItem.getTunnelUuid(stack));
 
-        // Until AETunnelPattern is added (M3), a tunnel pattern decodes as a processing pattern with inputs only.
+        // Tunnel patterns decode to AETunnelPattern (input-only, no outputs)
         var decoded = PatternDetailsHelper.decodePattern(stack, mock(Level.class));
-        assertInstanceOf(AEProcessingPattern.class, decoded);
-        var processingPattern = (AEProcessingPattern) decoded;
-        assertEquals(2, processingPattern.getSparseInputs().length);
-        assertEquals(0, processingPattern.getSparseOutputs().length);
+        assertInstanceOf(AETunnelPattern.class, decoded);
+        var tunnelPattern = (AETunnelPattern) decoded;
+        assertTrue(tunnelPattern.isInputOnly());
+        assertEquals(uuid, tunnelPattern.getInputOnlyUuid());
+        assertEquals(2, tunnelPattern.getInputs().length);
+        assertEquals(0, tunnelPattern.getOutputs().length);
+        assertEquals("tester", tunnelPattern.getAuthor());
     }
 
     @Test
@@ -92,6 +99,76 @@ class TunnelPatternEncodingTest {
         assertThrows(IllegalArgumentException.class,
                 () -> PatternDetailsHelper.encodeTunnelPattern(new GenericStack[] { null, null }, UUID.randomUUID(),
                         PatternInfo.EMPTY));
+    }
+
+    @Test
+    void testDecodeInvalidNoInputs() {
+        var uuid = UUID.randomUUID();
+        ItemStack stack = tunnelPatternStack(tag -> {
+            tag.put("in", new ListTag());
+            tag.put("out", new ListTag());
+            TunnelPatternItem.writeTunnelUuid(tag, uuid);
+        });
+
+        assertNull(decode(stack));
+    }
+
+    @Test
+    void testDecodeInvalidHasOutputs() {
+        var uuid = UUID.randomUUID();
+        ItemStack stack = tunnelPatternStack(tag -> {
+            tag.put("in", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { STICK }));
+            tag.put("out", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { TORCH }));
+            TunnelPatternItem.writeTunnelUuid(tag, uuid);
+        });
+
+        assertNull(decode(stack));
+    }
+
+    @Test
+    void testDecodeInvalidMissingUuid() {
+        ItemStack stack = tunnelPatternStack(tag -> {
+            tag.put("in", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { STICK }));
+            tag.put("out", new ListTag());
+            tag.putBoolean(TunnelPatternItem.TAG_TUNNEL, true);
+        });
+
+        assertNull(decode(stack));
+    }
+
+    @Test
+    void testDecodeInvalidBadUuid() {
+        ItemStack stack = tunnelPatternStack(tag -> {
+            tag.put("in", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { STICK }));
+            tag.put("out", new ListTag());
+            tag.putBoolean(TunnelPatternItem.TAG_TUNNEL, true);
+            tag.putString(TunnelPatternItem.TAG_TUNNEL_UUID, "not-a-uuid");
+        });
+
+        assertNull(decode(stack));
+    }
+
+    @Test
+    void testDecodeNonTunnelTagOnTunnelItemFails() {
+        // A tunnel pattern item without the tunnel marker is malformed and must not decode
+        ItemStack stack = tunnelPatternStack(tag -> {
+            tag.put("in", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { STICK }));
+            tag.put("out", ProcessingPatternEncoding.encodeStackList(new GenericStack[] { TORCH }));
+        });
+
+        assertNull(decode(stack));
+    }
+
+    private static ItemStack tunnelPatternStack(Consumer<CompoundTag> tagConsumer) {
+        var tag = new CompoundTag();
+        tagConsumer.accept(tag);
+        var stack = new ItemStack(AEItems.TUNNEL_PATTERN);
+        stack.setTag(tag);
+        return stack;
+    }
+
+    private static IPatternDetails decode(ItemStack stack) {
+        return PatternDetailsHelper.decodePattern(stack, mock(Level.class));
     }
 
     @Test
