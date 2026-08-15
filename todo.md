@@ -25,18 +25,18 @@
 
 ---
 
-## M1 物品与注册
+## M1 物品与注册 ✅
 
 > 新增 `TunnelPatternItem extends ProcessingPatternItem`（继承编码/解码流程），注册到 AEItems，
 > 提供静态工具 `isTunnelPattern / getTunnelUuid / writeTunnelUuid`（NBT 键 `tunnel` / `tunnelUuid`）。
 
-- [ ] **TP-100** 新增 `appeng/items/misc/TunnelPatternItem.java`（或 `appeng/crafting/pattern/TunnelPatternItem.java`，与现有包结构保持一致）：
+- [x] **TP-100** 新增 `appeng/items/misc/TunnelPatternItem.java`（或 `appeng/crafting/pattern/TunnelPatternItem.java`，与现有包结构保持一致）：
   - 构造器走 `ProcessingPatternItem` 相同编码路径，`decode()` 返回 `AETunnelPattern`（见 M3）
   - 静态方法：`isTunnelPattern(ItemStack)`、`getTunnelUuid(ItemStack)`、`writeTunnelUuid(CompoundTag, UUID)`、`readTunnelUuid(CompoundTag)`
   - NBT 常量：`TAG_TUNNEL = "tunnel"`、`TAG_TUNNEL_UUID = "tunnelUuid"`
-  - 文件：`src/main/java/appeng/items/misc/TunnelPatternItem.java` — 验证：`./gradlew spotlessCheck`；单元测试断言 NBT 读写往返
-- [ ] **TP-101** 注册物品：`AEItemIds` 增加 `TUNNEL_PATTERN` id，`AEItems` 增加 `TUNNEL_PATTERN` 定义（`stacksTo(1)`），并加入 `AEItems` 现有 items 列表以便被 `ItemStorage`/配方/creative 正确收录 — 文件：`src/main/java/appeng/api/ids/AEItemIds.java`、`src/main/java/appeng/core/definitions/AEItems.java` — 验证：`./gradlew runData` 后 datagen 无 diff；注册测试/游戏内 `/ae2` 命令可见
-- [ ] **TP-102** 资源文件：物品模型 JSON（可复用 processing pattern 纹理或新建 `item/tunnel_pattern`），lang 键 `item.ae2.tunnel_pattern` — 文件：`src/main/resources/assets/ae2/models/item/*.json`、`src/main/resources/assets/ae2/lang/en_gb.json`（及 `zh_cn.json`） — 验证：datagen/spotless json 通过；游戏内物品名称正确显示
+  - 文件：`src/main/java/appeng/crafting/pattern/TunnelPatternItem.java` — 验证：`./gradlew spotlessJavaCheck` 通过；`TunnelPatternItemTest` 7 用例全绿（NBT 读写往返/非法 UUID/空 UUID/非 tunnel 物品）
+- [x] **TP-101** 注册物品：`AEItemIds` 增加 `TUNNEL_PATTERN` id，`AEItems` 增加 `TUNNEL_PATTERN` 定义（`stacksTo(1)`），并加入 `AEItems` 现有 items 列表以便被 `ItemStorage`/配方/creative 正确收录 — 文件：`src/main/java/appeng/api/ids/AEItemIds.java`、`src/main/java/appeng/core/definitions/AEItems.java` — 验证：`./gradlew runData` 后 en_us.json 自动生成 `item.ae2.tunnel_pattern`，`./gradlew compileJava` 通过
+- [x] **TP-102** 资源文件：物品模型 JSON（可复用 processing pattern 纹理或新建 `item/tunnel_pattern`），lang 键 `item.ae2.tunnel_pattern` — 文件：`src/main/resources/assets/ae2/models/item/*.json`、`src/main/resources/assets/ae2/lang/en_gb.json`（及 `zh_cn.json`） — 验证：`runData` 生成 `tunnel_pattern.json` 模型；纹理移植自 1.7.10 `ItemTunnelPattern.png`（16×16 RGBA）；en_gb/zh_cn 已添加；游戏内显示路径与其余 6 种样板一致（待人工进服确认）
 
 ---
 

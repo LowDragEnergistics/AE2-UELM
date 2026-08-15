@@ -44,6 +44,7 @@ import appeng.crafting.pattern.CraftingPatternItem;
 import appeng.crafting.pattern.ProcessingPatternItem;
 import appeng.crafting.pattern.SmithingTablePatternItem;
 import appeng.crafting.pattern.StonecuttingPatternItem;
+import appeng.crafting.pattern.TunnelPatternItem;
 import appeng.debug.DebugCardItem;
 import appeng.debug.EraserItem;
 import appeng.debug.MeteoritePlacerItem;
@@ -180,6 +181,7 @@ public final class AEItems {
     public static final ItemDefinition<ProcessingPatternItem> PROCESSING_PATTERN = item("Processing Pattern", AEItemIds.PROCESSING_PATTERN, p -> new ProcessingPatternItem(p.stacksTo(1)));
     public static final ItemDefinition<SmithingTablePatternItem> SMITHING_TABLE_PATTERN = item("Smithing Table Pattern", AEItemIds.SMITHING_TABLE_PATTERN, p -> new SmithingTablePatternItem(p.stacksTo(1)));
     public static final ItemDefinition<StonecuttingPatternItem> STONECUTTING_PATTERN = item("Stonecutting Pattern", AEItemIds.STONECUTTING_PATTERN, p -> new StonecuttingPatternItem(p.stacksTo(1)));
+    public static final ItemDefinition<TunnelPatternItem> TUNNEL_PATTERN = item("Tunnel Pattern", AEItemIds.TUNNEL_PATTERN, p -> new TunnelPatternItem(p.stacksTo(1)));
 
     public static final ColoredItemDefinition<PaintBallItem> COLORED_PAINT_BALL = createColoredItems("Paint Ball", AEItemIds.COLORED_PAINT_BALL, (p, color) -> new PaintBallItem(p, color, false));
     public static final ColoredItemDefinition<PaintBallItem> COLORED_LUMEN_PAINT_BALL = createColoredItems("Lumen Paint Ball", AEItemIds.COLORED_LUMEN_PAINT_BALL, (p, color) -> new PaintBallItem(p, color, true));
