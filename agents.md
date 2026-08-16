@@ -69,8 +69,8 @@
 
 | 工作流 | 触发 | 内容 |
 |---|---|---|
-| `.github/workflows/tunnel-pattern-ci.yml` | push/PR 目标为 `TunnelPattern`，或手动 dispatch | `plan-check`（校验 agents.md/todo.md 结构）→ `build`（gradle-setup → runData → datagen 新鲜度 → spotlessCheck → build/test → 产物上传） |
-| `.github/scripts/check_todo.py` | 由 plan-check 调用 | 校验：agents.md 必备章节齐全；todo.md 里程碑/条目格式合法；条目 ID 唯一；已完结（✅）里程碑内不允许存在 `- [ ]` |
+| `.github/workflows/tunnel-pattern-ci.yml` | push/PR 目标为 `TunnelPattern` 或 `Loop-Crafting`，或手动 dispatch | `plan-check`（校验 agents.md/todo.md 结构）→ `build`（gradle-setup → runData → datagen 新鲜度 → spotlessCheck → build/test → 产物上传） |
+| `.github/scripts/check_todo.py` | 由 plan-check 调用 | 校验：agents.md 必备章节齐全；todo.md 里程碑/条目格式合法；条目 ID 唯一；已完结（✅）里程碑内不允许存在 `- [ ]`。**空清单（尚无 TP 条目）为合法起步态**，仅打印 notice 不报错 |
 
 **门禁语义**：plan-check 失败 ⇒ 构建不启动；条目 ID 重复或已完结里程碑残留未完成项 ⇒ 直接红灯。
 分支保护建议（仓库管理员设置）：`TunnelPattern` 分支要求 `TunnelPattern CI` 通过后方可合并。

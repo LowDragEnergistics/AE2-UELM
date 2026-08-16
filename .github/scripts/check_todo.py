@@ -103,7 +103,9 @@ def check_todo(path: str) -> list[str]:
         )
 
     if not ids:
-        errors.append("[todo.md] no TP-xxx items found")
+        # A fresh feature branch legitimately starts with an empty plan (no items yet).
+        # Print a notice but do not fail: structure is validated once items exist.
+        print("[todo.md] notice: no TP-xxx items found (empty/fresh plan is allowed)")
     return errors
 
 

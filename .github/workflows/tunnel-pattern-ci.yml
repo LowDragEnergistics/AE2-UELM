@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - TunnelPattern
+      - Loop-Crafting
   pull_request:
     branches:
       - TunnelPattern
+      - Loop-Crafting
   workflow_dispatch:
 
 # Cancel outdated runs for the same branch
