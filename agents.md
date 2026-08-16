@@ -11,7 +11,7 @@
 | 角色 | 职责 | 关键约束 |
 |---|---|---|
 | **Planner（规划者）** | 维护 `todo.md`/`agents.md`，划分里程碑，定义验收标准 | 不得在未更新 todo.md 的情况下变更范围 |
-| **Implementer（实现者）** | 按 `todo.md` 条目逐项实现，提交信息标注条目 ID（`TP-xxx:`） | 只改该条目声明涉及的文件；一次只推进一个里程碑 |
+| **Implementer（实现者）** | 按 `todo.md` 条目逐项实现，提交信息标注条目 ID（`<PREFIX>-xxx:`，如 `TP-`/`LC-`） | 只改该条目声明涉及的文件；一次只推进一个里程碑 |
 | **Reviewer（评审者）** | 逐条核对 DOD，检查向后兼容、防环/防溢出、错误处理 | 只读评审，不直接改代码；发现问题回退给 Implementer |
 | **Tester（测试者）** | 为 TP-700~702 编写单元/仿真测试并保证 `./gradlew test` 全绿 | 测试先行；仿真场景必须覆盖失败回滚 |
 | **CI（流程守护）** | 执行 `tunnel-pattern-ci.yml`：plan-check + 构建门禁 | 任何提交必须通过 plan-check 才能进入构建阶段 |
@@ -69,8 +69,8 @@
 
 | 工作流 | 触发 | 内容 |
 |---|---|---|
-| `.github/workflows/tunnel-pattern-ci.yml` | push/PR 目标为 `TunnelPattern`，或手动 dispatch | `plan-check`（校验 agents.md/todo.md 结构）→ `build`（gradle-setup → runData → datagen 新鲜度 → spotlessCheck → build/test → 产物上传） |
-| `.github/scripts/check_todo.py` | 由 plan-check 调用 | 校验：agents.md 必备章节齐全；todo.md 里程碑/条目格式合法；条目 ID 唯一；已完结（✅）里程碑内不允许存在 `- [ ]` |
+| `.github/workflows/tunnel-pattern-ci.yml` | push/PR 目标为 `TunnelPattern` 或 `Loop-Crafting`，或手动 dispatch | `plan-check`（校验 agents.md/todo.md 结构）→ `build`（gradle-setup → runData → datagen 新鲜度 → spotlessCheck → build/test → 产物上传） |
+| `.github/scripts/check_todo.py` | 由 plan-check 调用 | 校验：agents.md 必备章节齐全；todo.md 里程碑/条目格式合法；条目 ID 唯一；已完结（✅）里程碑内不允许存在 `- [ ]`。**空清单（尚无 TP 条目）为合法起步态**，仅打印 notice 不报错 |
 
 **门禁语义**：plan-check 失败 ⇒ 构建不启动；条目 ID 重复或已完结里程碑残留未完成项 ⇒ 直接红灯。
 分支保护建议（仓库管理员设置）：`TunnelPattern` 分支要求 `TunnelPattern CI` 通过后方可合并。

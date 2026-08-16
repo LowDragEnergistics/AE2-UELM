@@ -103,6 +103,7 @@ public final class AEBlockIds {
     public static final ResourceLocation CRAFTING_MONITOR = id("crafting_monitor");
     public static final ResourceLocation PATTERN_PROVIDER = id("pattern_provider");
     public static final ResourceLocation MOLECULAR_ASSEMBLER = id("molecular_assembler");
+    public static final ResourceLocation SELF_LOOP_MATRIX = id("self_loop_matrix");
 
     ///
     /// DECORATIVE BLOCKS

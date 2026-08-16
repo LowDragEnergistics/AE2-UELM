@@ -66,6 +66,7 @@ import appeng.block.misc.InterfaceBlock;
 import appeng.block.misc.LightDetectorBlock;
 import appeng.block.misc.MysteriousCubeBlock;
 import appeng.block.misc.QuartzFixtureBlock;
+import appeng.block.misc.SelfLoopMatrixBlock;
 import appeng.block.misc.SuperMEReplenisherBlock;
 import appeng.block.misc.TinyTNTBlock;
 import appeng.block.misc.VibrationChamberBlock;
@@ -201,6 +202,7 @@ public final class AEBlocks {
 
     public static final BlockDefinition<PatternProviderBlock> PATTERN_PROVIDER = block("ME Pattern Provider", AEBlockIds.PATTERN_PROVIDER, PatternProviderBlock::new);
     public static final BlockDefinition<MolecularAssemblerBlock> MOLECULAR_ASSEMBLER = block("Molecular Assembler", AEBlockIds.MOLECULAR_ASSEMBLER, () -> new MolecularAssemblerBlock(metalProps().noOcclusion()));
+    public static final BlockDefinition<SelfLoopMatrixBlock> SELF_LOOP_MATRIX = block("ME Self-Loop Matrix", AEBlockIds.SELF_LOOP_MATRIX, SelfLoopMatrixBlock::new);
 
     public static final BlockDefinition<LightDetectorBlock> LIGHT_DETECTOR = block("Light Detecting Fixture", AEBlockIds.LIGHT_DETECTOR, LightDetectorBlock::new);
     public static final BlockDefinition<PaintSplotchesBlock> PAINT = block("Paint", AEBlockIds.PAINT, PaintSplotchesBlock::new);

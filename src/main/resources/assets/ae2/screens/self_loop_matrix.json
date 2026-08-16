@@ -1,0 +1,71 @@
+{
+  "$schema": "schema.json",
+  "includes": ["common/common.json", "common/player_inventory.json"],
+  "background": {
+    "texture": "guis/background.png",
+    "srcRect": [0, 0, 176, 222]
+  },
+  "slots": {
+    "ENCODED_PATTERN": {
+      "left": 8,
+      "top": 28,
+      "grid": "HORIZONTAL"
+    },
+    "STORAGE": {
+      "left": 8,
+      "top": 50
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2.SelfLoopMatrix"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "patterns_label": {
+      "text": {
+        "translate": "gui.ae2.Patterns"
+      },
+      "position": {
+        "left": 8,
+        "top": 17
+      }
+    },
+    "target_label": {
+      "text": {
+        "translate": "gui.ae2.SelfLoopMatrixTarget"
+      },
+      "position": {
+        "left": 30,
+        "top": 53
+      }
+    },
+    "amount_label": {
+      "text": {
+        "translate": "gui.ae2.SelfLoopMatrixAmount"
+      },
+      "position": {
+        "left": 8,
+        "top": 75
+      }
+    }
+  },
+  "widgets": {
+    "amount": {
+      "left": 60,
+      "top": 70,
+      "width": 88,
+      "height": 16
+    },
+    "amountInput": {
+      "left": 62,
+      "top": 72,
+      "width": 84,
+      "height": 12
+    }
+  }
+}

@@ -266,3 +266,16 @@ overflow guards, CPU execution integration, tooltips and guidebook documentation
 </details>
 
 <!-- CHANGES:ENTRIES -->
+
+<!-- CHANGELOG-PR:24 -->
+<details>
+<summary><strong>Tunnel patterns + ME Self-Loop Matrix</strong> · Loop-Crafting branch</summary>
+
+- **TunnelPattern** (input-only patterns usable as pattern inputs, indexed by UUID from ME storage)
+- **ME Self-Loop Matrix**: a computing device attached to an ME network that computes exact production
+  plans for self-loop (self-multiplying) crafting recipes — per-cycle net change, minimum seed,
+  repetitions, compressed batch schedule and input shortages. Ports DataEnergistics' deterministic
+  cycle planning (Trinity) math; supports tunnel patterns as loop inputs.
+- ME storage indexing fix for tunnel patterns (15.5.2), plain SemVer in mods.toml (15.5.3)
+
+</details>

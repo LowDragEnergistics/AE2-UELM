@@ -8,7 +8,7 @@ agents.md:
 
 todo.md:
   - milestones use '## M{n}' headers
-  - items use '- [ ]' / '- [x]' with a unique 'TP-\\d+' id
+  - items use '- [ ]' / '- [x]' with a unique '<PREFIX>-\\d+' id (e.g. TP- or LC-)
   - a milestone marked complete (trailing '✅') must not contain unchecked items
   - item ids must be unique across the file
 
@@ -31,7 +31,7 @@ AGENTS_REQUIRED_SECTIONS = [
 
 MILESTONE_RE = re.compile(r"^## M\d+ .+")
 CHECKBOX_RE = re.compile(r"^- \[([ xX])\] ")
-ITEM_ID_RE = re.compile(r"TP-\d+")
+ITEM_ID_RE = re.compile(r"[A-Z]+-\d+")
 DONE_MILESTONE_MARK_RE = re.compile(r"✅\s*$")
 
 
@@ -76,7 +76,7 @@ def check_todo(path: str) -> list[str]:
             id_match = ITEM_ID_RE.search(line)
             item_id = id_match.group(0) if id_match else None
             if item_id is None:
-                errors.append(f"[todo.md:{lineno}] checkbox item without TP-xxx id: '{line.strip()}'")
+                errors.append(f"[todo.md:{lineno}] checkbox item without <PREFIX>-xxx id: '{line.strip()}'")
                 continue
             if item_id in ids:
                 errors.append(
@@ -103,7 +103,9 @@ def check_todo(path: str) -> list[str]:
         )
 
     if not ids:
-        errors.append("[todo.md] no TP-xxx items found")
+        # A fresh feature branch legitimately starts with an empty plan (no items yet).
+        # Print a notice but do not fail: structure is validated once items exist.
+        print("[todo.md] notice: no <PREFIX>-xxx items found (empty/fresh plan is allowed)")
     return errors
 
 
