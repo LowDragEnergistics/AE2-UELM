@@ -374,7 +374,10 @@ processResources {
     filesMatching("META-INF/mods.toml") {
         expand expansionVariables
         filter { line ->
-            line.replace('version="0.0.0"', "version=\"${expansionVariables['project_version']}\"")
+            // mods.toml always gets a plain SemVer: the "-uelm" suffix is only a fork-specific artifact
+            // name marker (injected via the release TAG) and would fail Forge version range checks if
+            // written into the mod metadata.
+            line.replace('version="0.0.0"', "version=\"${project.version.toString().split('-')[0]}\"")
         }
     }
 }
