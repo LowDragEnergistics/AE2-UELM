@@ -50,6 +50,7 @@ import appeng.blockentity.misc.InscriberBlockEntity;
 import appeng.blockentity.misc.InterfaceBlockEntity;
 import appeng.blockentity.misc.LightDetectorBlockEntity;
 import appeng.blockentity.misc.PaintSplotchesBlockEntity;
+import appeng.blockentity.misc.SelfLoopMatrixBlockEntity;
 import appeng.blockentity.misc.SuperMEReplenisherBlockEntity;
 import appeng.blockentity.misc.VibrationChamberBlockEntity;
 import appeng.blockentity.networking.CableBusBlockEntity;
@@ -150,6 +151,9 @@ public final class AEBlockEntities {
     public static final BlockEntityType<MolecularAssemblerBlockEntity> MOLECULAR_ASSEMBLER = create(
             "molecular_assembler",
             MolecularAssemblerBlockEntity.class, MolecularAssemblerBlockEntity::new, AEBlocks.MOLECULAR_ASSEMBLER);
+    public static final BlockEntityType<SelfLoopMatrixBlockEntity> SELF_LOOP_MATRIX = create(
+            "self_loop_matrix",
+            SelfLoopMatrixBlockEntity.class, SelfLoopMatrixBlockEntity::new, AEBlocks.SELF_LOOP_MATRIX);
     public static final BlockEntityType<LightDetectorBlockEntity> LIGHT_DETECTOR = create("light_detector",
             LightDetectorBlockEntity.class, LightDetectorBlockEntity::new, AEBlocks.LIGHT_DETECTOR);
     public static final BlockEntityType<PaintSplotchesBlockEntity> PAINT = create("paint",

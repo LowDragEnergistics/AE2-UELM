@@ -143,6 +143,16 @@ public class CraftingRecipes extends AE2RecipeProvider {
                 .define('a', AEBlocks.SKY_STONE_BLOCK)
                 .unlockedBy("has_sky_stone_block", has(AEBlocks.SKY_STONE_BLOCK))
                 .save(consumer, AppEng.makeId("misc/chests_sky_stone"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, AEBlocks.SELF_LOOP_MATRIX)
+                .pattern("aba")
+                .pattern("cdc")
+                .pattern("aba")
+                .define('a', AEItems.CALCULATION_PROCESSOR)
+                .define('b', AEItems.ENGINEERING_PROCESSOR)
+                .define('c', AEItems.LOGIC_PROCESSOR)
+                .define('d', AEItems.PROCESSING_PATTERN)
+                .unlockedBy("has_calculation_processor", has(AEItems.CALCULATION_PROCESSOR))
+                .save(consumer, AppEng.makeId("misc/self_loop_matrix"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, AEBlocks.SMOOTH_SKY_STONE_CHEST)
                 .pattern("aaa")
                 .pattern("a a")

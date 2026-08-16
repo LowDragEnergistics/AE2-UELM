@@ -61,36 +61,37 @@
   `TunnelPatternExpander` 展开为具体内容（改隧道内容无需改引用样板）；未解析引用/隧道环/畸形 UUID 拒绝；
   隧道参与多步自环（1 stick+1 torch→2 torch）端到端计划 — 验证：`CyclePatternsTest` 7 用例全绿
 
-## M2 设备注册与网络接入 
+## M2 设备注册与网络接入 ✅
 
-- [ ] **LC-020** `SelfLoopMatrixBlock extends AEBaseEntityBlock`（网格方块，8 向，无灯）+
-  `SelfLoopMatrixBlockEntity extends AEBaseBlockEntity`（`AEGridBlock`/`GridNode` 挂载 ME 网络、
-  `ServerTickingBlockEntity` 每 tick 计算刷新） — 验证：注册测试 + 手测网格状态
-- [ ] **LC-021** 注册链路：`AEItemIds.SELF_LOOP_MATRIX`、`AEBlocks`（block()）+ `AEItems`（item）+
-  `AEBlockEntities`（create）→ `InitBlocks/InitItems/InitBlockEntities` 接入；方块状态/物品模型
-  datagen（`ItemModelProvider`） — 验证：runData 产物 + 注册测试
-- [ ] **LC-022** 内部库存：9 槽循环样板槽（`ProcessingPatternItem` 及其子类如 TunnelPatternItem），
-  `AEBaseInvBlockEntity` 库存适配 + 槽位语义；内容变更触发重算 — 验证：库存测试
+- [x] **LC-020** `SelfLoopMatrixBlock extends AEBaseEntityBlock`（metalProps，右键开菜单）+
+  `SelfLoopMatrixBlockEntity extends AENetworkBlockEntity`（GridNode 挂载 ME 网络、
+  `ServerTickingBlockEntity` 变更重算、idle power 1.0） — 验证：`SelfLoopMatrixRegistrationTest`
+- [x] **LC-021** 注册链路：`AEBlockIds.SELF_LOOP_MATRIX`、`AEBlocks`（block()）、
+  `AEBlockEntities`（create）→ `InitItems/InitBlockEntities/InitMenuTypes/InitScreens` 接入；
+  方块状态/物品模型/战利品表/配方/advancement datagen 产物齐备 — 验证：runData + 注册测试
+- [x] **LC-022** 内部库存：9 槽循环样板（`ProcessingPatternItem` 含 TunnelPatternItem）+ 1 目标槽，
+  `AppEngInternalInventory` + NBT 持久化；内容变更触发重算 — 验证：`SelfLoopMatrixBlockEntityTest`
+  testInventoryRoundTrip
 
-## M3 菜单与界面（计算设备交互） 
+## M3 菜单与界面（计算设备交互） ✅
 
-- [ ] **LC-030** `SelfLoopMatrixMenu extends AEBaseMenu`：9 模式槽 + 目标请求输入（物品 + 数量）
-  + 计算按钮 + 结果同步（guisync）；`InitMenuTypes` 注册 — 验证：菜单测试
-- [ ] **LC-031** `SelfLoopMatrixScreen`：显示每周期净变化表、最小种子、重复次数、聚合 firing、
-  调度批次（rotation × cycles）、缺失输入（含分类）、productive/non-productive 状态 —
-  验证：Screen 加载测试
-- [ ] **LC-032** 网络包：C2S 计算请求（目标/数量）、S2C 计划结果推送；Server 线程计算引擎调用 —
-  验证：包注册测试
-- [ ] **LC-033** 本地化：`GuiText`/lang en_gb/en_us/zh_cn + 状态文本 — 验证：语言文件 lint
+- [x] **LC-030** `SelfLoopMatrixMenu extends AEBaseMenu`：9 样板槽 + 目标槽 + 数量（client action）
+  + NET_NEW/FINAL_TOTAL 切换；@GuiSync 同步 planStatus/planSummary/requestedAmount/quantityMode；
+  `InitMenuTypes` 注册 — 验证：菜单类型注册测试
+- [x] **LC-031** `SelfLoopMatrixScreen`：显示服务器构建的计划摘要（净变化/种子/重复次数/调度/缺失）、
+  数量输入框、模式切换按钮 — 验证：Screen 注册进 InitScreens、样式 JSON 校验
+- [x] **LC-032** 交互同步：client action 走 `registerClientAction`/`sendClientAction`（AE2 既有通道，
+  无需新增包）；服务器 tick 重算 + `broadcastChanges` 推送 — 验证：菜单广播逻辑
+- [x] **LC-033** 本地化：`GuiText.SelfLoopMatrix/Target/Amount` + en_us（datagen 生成）+ zh_cn 手写；
+  屏幕标签 — 验证：`testLangKeysPresent`（en_us/zh_cn）
 
 ## M4 数据生成、文档与收尾 
 
-- [ ] **LC-040** datagen：方块状态/物品模型/语言/合成配方（本体 + 基础原料）；guidebook 页面
-  （`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`，并入 index） — 验证：runData 无 diff
-- [ ] **LC-041** 文档：`agents.md` §5 注明 `LC-` 前缀与 ID 泛化；CHANGES.md 记录本功能 —
-  验证：plan-check + lint
+- [ ] **LC-040** datagen：方块状态/物品模型/语言/合成配方（计算/工程/逻辑处理器 + 处理样板）；
+  guidebook 页面（`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`） — 验证：runData 无 diff
+- [ ] **LC-041** 文档：CHANGES.md 记录本功能 — 验证：lint
 - [ ] **LC-042** 全量验证：`./gradlew test runData validateResources spotlessJavaCheck -x spotlessJson`
-  （本地 479+ 用例仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿 —
+  （本地仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿 —
   验证：CI 徽章
 - [ ] **LC-043** 版本管理：功能 → MINOR `15.5.3 → 15.6.0`；tag `forge/v15.6.0-uelm`；PR 并入
   `forge/1.20.1`；发布 Release（产物 `appliedenergistics2-forge-15.6.0-uelm[-type].jar`，
