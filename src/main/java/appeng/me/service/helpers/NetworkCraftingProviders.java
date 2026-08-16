@@ -42,10 +42,13 @@ public class NetworkCraftingProviders {
      */
     private final Map<UUID, IPatternDetails> inputOnlyPatterns = new HashMap<>();
     /**
-     * The last storage snapshot that {@link #inputOnlyPatterns} was built from. {@link KeyCounter} instances are only
-     * re-created by the storage service when the stored items change, so instance identity is a cheap staleness check.
+     * The set of stored tunnel pattern item keys the {@link #inputOnlyPatterns} map was last built from. The storage
+     * service reuses the same {@link KeyCounter} instance for its cached inventory (it is cleared and refilled in
+     * place), so staleness cannot be detected by instance identity - instead the set of tunnel pattern item keys is
+     * compared. The set changes whenever a tunnel pattern is added, removed, or its contents change (the item key
+     * includes the pattern NBT).
      */
-    private KeyCounter lastScannedItems = null;
+    private Set<AEItemKey> lastScannedTunnelKeys = Set.of();
     /**
      * Used for looking up craftable alternatives using fuzzy search (i.e. ignore NBT).
      */
@@ -136,23 +139,27 @@ public class NetworkCraftingProviders {
     }
 
     /**
-     * Re-indexes input-only (tunnel) patterns from the network's ME storage. No-op if the given storage snapshot has
-     * not changed since the last scan.
+     * Re-indexes input-only (tunnel) patterns from the network's ME storage. No-op if the set of stored tunnel pattern
+     * item keys has not changed since the last scan.
      */
     public void refreshInputOnlyPatterns(KeyCounter items) {
-        if (items == lastScannedItems) {
-            return;
-        }
-        lastScannedItems = items;
-
-        this.inputOnlyPatterns.clear();
+        var currentTunnelKeys = new HashSet<AEItemKey>();
         for (var entry : items) {
             var key = entry.getKey();
-            if (key instanceof AEItemKey itemKey && itemKey.getItem() instanceof TunnelPatternItem tunnelPatternItem) {
-                var pattern = tunnelPatternItem.decode(itemKey, null);
-                if (pattern != null) {
-                    this.inputOnlyPatterns.put(pattern.getInputOnlyUuid(), pattern);
-                }
+            if (key instanceof AEItemKey itemKey && itemKey.getItem() instanceof TunnelPatternItem) {
+                currentTunnelKeys.add(itemKey);
+            }
+        }
+        if (currentTunnelKeys.equals(lastScannedTunnelKeys)) {
+            return;
+        }
+        lastScannedTunnelKeys = currentTunnelKeys;
+
+        this.inputOnlyPatterns.clear();
+        for (var itemKey : currentTunnelKeys) {
+            var pattern = ((TunnelPatternItem) itemKey.getItem()).decode(itemKey, null);
+            if (pattern != null) {
+                this.inputOnlyPatterns.put(pattern.getInputOnlyUuid(), pattern);
             }
         }
     }

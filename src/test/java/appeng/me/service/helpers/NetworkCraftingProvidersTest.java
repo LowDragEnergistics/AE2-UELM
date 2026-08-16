@@ -183,6 +183,39 @@ class NetworkCraftingProvidersTest {
     }
 
     @Test
+    void testTunnelPatternUpdateDetectedWithSameCounterInstance() {
+        var providers = new NetworkCraftingProviders();
+        var uuid = UUID.randomUUID();
+
+        // Initial: a tunnel pattern whose only input is 1 stick.
+        var oldTunnel = PatternDetailsHelper.encodeTunnelPattern(
+                new GenericStack[] { GenericStack.fromItemStack(new ItemStack(Items.STICK)) }, uuid, "test");
+        var items = new KeyCounter();
+        items.add(AEItemKey.of(oldTunnel), 1);
+
+        providers.refreshInputOnlyPatterns(items);
+        var initial = providers.getInputOnlyPattern(uuid);
+        assertThat(initial).isNotNull();
+        assertThat(initial.getInputs()[0].getPossibleInputs()[0].what())
+                .isEqualTo(AEItemKey.of(Items.STICK));
+
+        // The storage service mutates the SAME KeyCounter instance in place when the storage changes
+        // (it calls clear() and refills it). Simulate that by replacing the content of the same instance
+        // with an updated tunnel pattern of the same UUID whose input is now 2 torches.
+        var newTunnel = PatternDetailsHelper.encodeTunnelPattern(
+                new GenericStack[] { new GenericStack(AEItemKey.of(Items.TORCH), 2) }, uuid, "test");
+        items.clear();
+        items.add(AEItemKey.of(newTunnel), 1);
+
+        providers.refreshInputOnlyPatterns(items);
+        var updated = providers.getInputOnlyPattern(uuid);
+        assertThat(updated).isNotNull();
+        assertThat(updated.getInputs()).hasSize(1);
+        assertThat(updated.getInputs()[0].getPossibleInputs()[0].what())
+                .isEqualTo(AEItemKey.of(Items.TORCH));
+    }
+
+    @Test
     void testTunnelPatternsNotIndexedFromProviders() {
         var providers = new NetworkCraftingProviders();
         var uuid = UUID.randomUUID();
