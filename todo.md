@@ -85,14 +85,16 @@
 - [x] **LC-033** 本地化：`GuiText.SelfLoopMatrix/Target/Amount` + en_us（datagen 生成）+ zh_cn 手写；
   屏幕标签 — 验证：`testLangKeysPresent`（en_us/zh_cn）
 
-## M4 数据生成、文档与收尾 
+## M4 数据生成、文档与收尾 ✅
 
-- [ ] **LC-040** datagen：方块状态/物品模型/语言/合成配方（计算/工程/逻辑处理器 + 处理样板）；
-  guidebook 页面（`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`） — 验证：runData 无 diff
-- [ ] **LC-041** 文档：CHANGES.md 记录本功能 — 验证：lint
-- [ ] **LC-042** 全量验证：`./gradlew test runData validateResources spotlessJavaCheck -x spotlessJson`
-  （本地仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿 —
-  验证：CI 徽章
-- [ ] **LC-043** 版本管理：功能 → MINOR `15.5.3 → 15.6.0`；tag `forge/v15.6.0-uelm`；PR 并入
-  `forge/1.20.1`；发布 Release（产物 `appliedenergistics2-forge-15.6.0-uelm[-type].jar`，
-  mods.toml 纯 `15.6.0`） — 验证：产物名 + 发布页
+- [x] **LC-040** datagen：方块状态/物品模型/语言/合成配方（计算/工程/逻辑处理器 + 处理样板）；
+  guidebook 页面（`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`） —
+  验证：runData 无 diff、产物齐备（blockstate/models/loot/recipe/advancement/en_us）
+- [x] **LC-041** 文档：CHANGES.md 记录本功能 — 验证：lint
+- [x] **LC-042** 全量验证：`./gradlew test runData validateResources spotlessJavaCheck -x spotlessJson`
+  （507 用例仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿、
+  PR #9 检查通过 — 验证：CI 徽章
+- [x] **LC-043** 版本管理：功能 → MINOR `15.5.3 → 15.6.0`；tag `forge/v15.6.0-uelm` 已推送；
+  PR #9 已并入 `forge/1.20.1`；Release v15.6.0-uelm 已发布（产物
+  `appliedenergistics2-forge-15.6.0-uelm[-api|-javadoc].jar`，实测 jar 内 mods.toml `version="15.6.0"`、
+  含 8 个 self_loop_matrix 资源） — 验证：发布页 + 产物实测
