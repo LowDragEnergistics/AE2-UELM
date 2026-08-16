@@ -191,11 +191,14 @@
    - 向后**兼容**的新特性 → **minor** 提升
    - 向后**兼容**的缺陷修复 → **patch** 提升
    - 例：上游 `15.5.0-uelm` + 新特性 → `15.6.0-uelm`；+ 缺陷修复 → `15.5.1-uelm`
-3. **版本格式**（上游约定）：`<semver>-uelm`（如 `15.5.1-uelm`）——`-uelm` 为 SemVer 预发布后缀。
-4. **修改位置**：`gradle.properties`（`version=<semver>-uelm`）与 `src/main/resources/META-INF/mods.toml`
-   （`version="<semver>-uelm"`——构建时由 processResources 以工程版本替换，源文件需保持一致）。
+3. **版本格式**：`gradle.properties` 使用**标准 SemVer**（如 `15.5.1`，**不含 `-uelm`**）——非标准预发布后缀会导致模组版本兼容检查失效；
+   `-uelm` 后缀仅在发布构建中由 release tag（TAG 环境变量）注入。
+4. **修改位置**：`gradle.properties`（`version=<标准semver>`）；`src/main/resources/META-INF/mods.toml` 源文件保持
+   `version="0.0.0"` 占位符（构建时由 processResources 以工程版本替换，勿硬编码具体版本）。
 5. **git tag**：上游约定为 `forge/v<semver>-uelm`（如 `forge/v15.5.1-uelm`）；tag 打在版本提升提交上，随分支一起推送。
-6. **构建产物命名**：`appliedenergistics2-forge-<semver>-uelm[-type].jar`
-   （如 `appliedenergistics2-forge-15.5.1-uelm.jar`、`-api.jar`、`-javadoc.jar`，`type` 为 `api`/`javadoc` 等）。
+6. **构建产物命名**：
+   - 标准/开发构建：`appliedenergistics2-forge-<semver>.jar`（mods.toml 版本为 `<semver>`）
+   - 发布构建（经 release 触发，`gradle-setup` 导出 `TAG=forge/v<semver>-uelm`）：
+     `appliedenergistics2-forge-<semver>-uelm[-type].jar`（mods.toml 版本为 `<semver>-uelm`），`type` 为 `api`/`javadoc` 等
 7. **CI 一致性**：版本提升提交后，`TunnelPattern CI` 与 `Build and Test` 须全绿；版本不影响 datagen（`runData` 后 generated 无 diff）。
 8. **默认分支同步**：版本提升提交应通过 PR 合入 `forge/1.20.1`，保持默认分支版本与功能/修复一致。
