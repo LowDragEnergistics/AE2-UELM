@@ -4,6 +4,10 @@ on:
   release:
     types: [ published ]
 
+# Allow the workflow's GITHUB_TOKEN to upload release assets
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build
@@ -84,6 +88,9 @@ jobs:
 
   deploy-github-packages:
     name: Deploy to Expandium Maven
+    # Disabled for this fork: the Expandium Maven repository belongs to the upstream project and the
+    # required secrets are not configured here.
+    if: false
     needs: build
     runs-on: ubuntu-latest
     steps:
