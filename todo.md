@@ -39,22 +39,27 @@
   术语：firing（一次执行）、variant（模式变体：inputs/outputs/netChange）、cycle（一个完整生产环）、
   plan（repetitions + aggregateFirings + minimumSeed + initialInputs + netChange + schedule）
 
-## M1 核心循环计算引擎（纯 Java + 单测） 
+## M1 核心循环计算引擎（纯 Java + 单测） ✅
 
-- [ ] **LC-010** 引擎数据结构：`LoopFiring`（variant + count）、`LoopVariant`（inputs/outputs/netChange，
-  守恒校验 outputs-inputs）、`CycleBalance`（minimumSeed + netChange）、`CyclePlan`（不可变记录，
-  构造时全量守恒校验：aggregateFirings=期望、netChange=精确效果、finalBalance 非负） — 验证：单测
-- [ ] **LC-011** 确定性循环规划器 `DeterministicCyclePlanner`：cycleBalance（前缀赤字 → minimumSeed）、
+- [x] **LC-010** 引擎数据结构：`LoopFiring`（inputs/outputs/count + netChange）、`CycleBalance`
+  （minimumSeed + netChange）、`CyclePlan`（不可变记录，构造时全量守恒校验：aggregateFirings=期望、
+  netChange=精确效果、initialInputs 覆盖 seed、schedule 模拟 finalBalance 非负） —
+  验证：`appeng/crafting/cycle/LoopFiring.java`/`CyclePlan.java`；单测 `testAccountingValidation`
+- [x] **LC-011** 确定性循环规划器 `DeterministicCyclePlanner`：cycleBalance（前缀赤字 → minimumSeed）、
   repetitions=ceilDivide(requiredNet,targetEffect)（FINAL_TOTAL 时 max(1) 且补 target contribution）、
-  repeatedMinimumSeed（负净变化 × (N-1)）、库存/可生产输入校验 → CyclePlan 或输入不足诊断 — 验证：单测
-- [ ] **LC-012** 仿射压缩调度器 `AffineRepeatScheduler`：rotation 轮转选择最大可执行批
-  （maximumExecutableCycles 用 slope/margin 区间收缩）、批量应用守恒、状态上限/取消/超时中止、
-  相邻同类 batch 合并 — 验证：单测（对数级 batch 数）
-- [ ] **LC-013** 引擎单元测试（JUnit）：单自环（A+B→2A）、多步环（A→B, B→2A+废物）、
-  FINAL_TOTAL vs NET_NEW 语义、非生产性循环拒绝（targetEffect≤0）、输入不足三分类诊断、
-  计划/调度守恒反例、BigInteger 大数无溢出 — 验证：全绿
-- [ ] **LC-014** 引擎与 AE 类型解耦：仅依赖 `AEKey`/`GenericStack`/`AEItemKey`，不引用 Block/Menu/
-  GUI 类；供方块实体与测试共用 — 验证：编译依赖检查
+  repeatedMinimumSeed（负净变化 × (N-1)）、库存/可生产输入校验 → CyclePlan 或输入不足诊断 —
+  验证：`DeterministicCyclePlannerTest` 13 用例全绿（NET_NEW/FINAL_TOTAL、双步环、可生产输入覆盖）
+- [x] **LC-012** 仿射压缩调度器 `AffineRepeatScheduler`：rotation 轮转选择最大可执行批
+  （maximumExecutableCycles 用 slope/margin 区间收缩）、批量应用守恒、状态上限中止、相邻同类 batch 合并 —
+  验证：`testScheduleIsLogarithmicInRepetitions`（10^12 次重复 <128 批）
+- [x] **LC-013** 引擎单元测试（JUnit）：单自环（A+B→2A）、多步环（A→B, B+C→2A）、
+  FINAL_TOTAL vs NET_NEW 语义、非生产性/收缩循环拒绝、输入不足诊断、BigInteger 10^60 无溢出 —
+  验证：13/13 全绿
+- [x] **LC-014** 引擎与 AE 类型解耦：仅依赖 `AEKey`/`GenericStack`/`AEItemKey`，不引用 Block/Menu/GUI 类 —
+  验证：编译依赖检查通过
+- [x] **LC-015** 隧道样板兼容（额外目标）：`CyclePatterns` 将处理样板转为 firing，输入中的隧道引用经
+  `TunnelPatternExpander` 展开为具体内容（改隧道内容无需改引用样板）；未解析引用/隧道环/畸形 UUID 拒绝；
+  隧道参与多步自环（1 stick+1 torch→2 torch）端到端计划 — 验证：`CyclePatternsTest` 7 用例全绿
 
 ## M2 设备注册与网络接入 
 
