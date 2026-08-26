@@ -33,14 +33,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import appeng.block.AEBaseEntityBlock;
 import appeng.blockentity.misc.SelfLoopMatrixBlockEntity;
 import appeng.core.definitions.AEBlockEntities;
-import appeng.menu.MenuOpener;
-import appeng.menu.implementations.SelfLoopMatrixMenu;
-import appeng.menu.locator.MenuLocators;
-import appeng.util.InteractionUtil;
 
 /**
- * The ME Self-Loop Matrix: a computing device attached to an ME network that computes exact production plans for
- * self-loop (self-multiplying) crafting recipes.
+ * The ME Self-Loop Matrix: a computing device attached to an ME network that automatically identifies self-loop
+ * (self-multiplying) crafting recipes from the network's pattern providers and takes them over as an
+ * {@link appeng.api.networking.crafting.ICraftingProvider}. It has no GUI.
  */
 public class SelfLoopMatrixBlock extends AEBaseEntityBlock<SelfLoopMatrixBlockEntity> {
 
@@ -51,17 +48,7 @@ public class SelfLoopMatrixBlock extends AEBaseEntityBlock<SelfLoopMatrixBlockEn
     @Override
     public InteractionResult onActivated(Level level, BlockPos pos, Player player, InteractionHand hand,
             @Nullable ItemStack heldItem, BlockHitResult hit) {
-        var be = this.getBlockEntity(level, pos);
-        if (be != null) {
-
-            if (!InteractionUtil.isInAlternateUseMode(player)) {
-                if (!level.isClientSide()) {
-                    MenuOpener.open(SelfLoopMatrixMenu.TYPE, player, MenuLocators.forBlockEntity(be));
-                }
-                return InteractionResult.sidedSuccess(level.isClientSide());
-            }
-        }
-
+        // The matrix has no GUI: it acts purely as a network computing device.
         return InteractionResult.PASS;
     }
 

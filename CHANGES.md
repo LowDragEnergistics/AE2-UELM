@@ -279,3 +279,16 @@ overflow guards, CPU execution integration, tooltips and guidebook documentation
 - ME storage indexing fix for tunnel patterns (15.5.2), plain SemVer in mods.toml (15.5.3)
 
 </details>
+
+<!-- CHANGELOG-PR:25 -->
+<details>
+<summary><strong>ME Self-Loop Matrix: automatic network takeover (GUI removed)</strong> · Loop-Crafting branch</summary>
+
+- The matrix now automatically identifies self-loop recipes from the network's pattern providers
+  (SCC cycle detection, tunnel references expanded) and takes them over as an `ICraftingProvider`:
+  the loop targets become craftable with high priority, and pushed requests are executed by
+  forwarding the compressed schedule batches to the providers owning the loop patterns.
+- The GUI added in the previous stage (menu, screen, pattern/target slots, amount/mode controls)
+  has been removed; the device has no GUI and needs no manual configuration.
+
+</details>

@@ -85,14 +85,35 @@
 - [x] **LC-033** 本地化：`GuiText.SelfLoopMatrix/Target/Amount` + en_us（datagen 生成）+ zh_cn 手写；
   屏幕标签 — 验证：`testLangKeysPresent`（en_us/zh_cn）
 
-## M4 数据生成、文档与收尾 
+## M4 数据生成、文档与收尾 ✅
 
-- [ ] **LC-040** datagen：方块状态/物品模型/语言/合成配方（计算/工程/逻辑处理器 + 处理样板）；
-  guidebook 页面（`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`） — 验证：runData 无 diff
-- [ ] **LC-041** 文档：CHANGES.md 记录本功能 — 验证：lint
-- [ ] **LC-042** 全量验证：`./gradlew test runData validateResources spotlessJavaCheck -x spotlessJson`
-  （本地仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿 —
-  验证：CI 徽章
-- [ ] **LC-043** 版本管理：功能 → MINOR `15.5.3 → 15.6.0`；tag `forge/v15.6.0-uelm`；PR 并入
-  `forge/1.20.1`；发布 Release（产物 `appliedenergistics2-forge-15.6.0-uelm[-type].jar`，
-  mods.toml 纯 `15.6.0`） — 验证：产物名 + 发布页
+- [x] **LC-040** datagen：方块状态/物品模型/语言/合成配方（计算/工程/逻辑处理器 + 处理样板）；
+  guidebook 页面（`guidebook/ae2-mechanics/self-loop-matrix.md` + `_zh_cn`） —
+  验证：runData 无 diff、产物齐备（blockstate/models/loot/recipe/advancement/en_us）
+- [x] **LC-041** 文档：CHANGES.md 记录本功能 — 验证：lint
+- [x] **LC-042** 全量验证：`./gradlew test runData validateResources spotlessJavaCheck -x spotlessJson`
+  （507 用例仅剩基线 CubeBuilderTest 环境失败）；CI `TunnelPattern CI` + `Build and Test` 全绿、
+  PR #9 检查通过 — 验证：CI 徽章
+- [x] **LC-043** 版本管理：功能 → MINOR `15.5.3 → 15.6.0`；tag `forge/v15.6.0-uelm` 已推送；
+  PR #9 已并入 `forge/1.20.1`；Release v15.6.0-uelm 已发布（产物
+  `appliedenergistics2-forge-15.6.0-uelm[-api|-javadoc].jar`，实测 jar 内 mods.toml `version="15.6.0"`、
+  含 8 个 self_loop_matrix 资源） — 验证：发布页 + 产物实测
+
+## M5 网络接管：识别 + 技术接管（去 GUI） 
+
+- [x] **LC-050** 网络配方扫描与环识别：`LoopNetworkScan`（遍历 `grid.getMachines(PatternProviderBlockEntity.class)` →
+  `getLogic().getAvailablePatterns()` → `CyclePatterns.fromPattern` 转换并绑定 pattern→provider）+ `LoopDetector`
+  （Tarjan SCC 依赖图 + 自环检测 → 环清单 + 生产性目标） — 验证：`LoopDetectorTest` 6 用例全绿
+  （单自环/线性链无环/双步环/外部链/多环/收缩环无生产目标）
+- [x] **LC-051** 虚拟样板与接管注册：`CyclePatternDetails implements IPatternDetails`（inputs=计划种子、
+  outputs=[目标×计划量]、long 饱和）；矩阵实现 `ICraftingProvider`（getAvailablePatterns/pushPattern/isBusy/
+  getEmitableItems=空/优先级 1000）挂网格节点服务，识别变化 `requestUpdate` 刷新；
+  `maxPlan` 指数探测+二分求当前存储可支撑最大计划 — 验证：`CycleTakeoverTest` + 注册测试
+- [x] **LC-052** 循环执行编排：`LoopExecutionTask`（pushPattern 按 inputHolder 种子重规划，依 affine batches
+  逐批向绑定 provider 转发 pushPattern，busy 下 tick 重试；产物由网络机器送回） —
+  验证：`CycleTakeoverTest`（转发/重试/inputHolder 槽数）5 用例全绿
+- [x] **LC-053** 去除 GUI：删除 `SelfLoopMatrixMenu/Screen`、`screens/self_loop_matrix.json`、`GuiText` 条目、
+  `InitMenuTypes/InitScreens` 注册；方块 `onActivated` 移除；BE 精简为纯接管设备（去槽位/目标/摘要/持久化） —
+  验证：编译 + 注册测试（含"GUI 键已移除"断言）
+- [ ] **LC-054** 测试/文档/收尾：guidebook 与 CHANGES.md 更新（已改）；全量验证；版本 `15.6.0 → 15.7.0`（MINOR）、
+  tag `forge/v15.7.0-uelm`、PR 并入 `forge/1.20.1`、Release — 验证：CI + 发布页
