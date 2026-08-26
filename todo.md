@@ -99,7 +99,7 @@
   `appliedenergistics2-forge-15.6.0-uelm[-api|-javadoc].jar`，实测 jar 内 mods.toml `version="15.6.0"`、
   含 8 个 self_loop_matrix 资源） — 验证：发布页 + 产物实测
 
-## M5 网络接管：识别 + 技术接管（去 GUI） 
+## M5 网络接管：识别 + 技术接管（去 GUI） ✅
 
 - [x] **LC-050** 网络配方扫描与环识别：`LoopNetworkScan`（遍历 `grid.getMachines(PatternProviderBlockEntity.class)` →
   `getLogic().getAvailablePatterns()` → `CyclePatterns.fromPattern` 转换并绑定 pattern→provider）+ `LoopDetector`
@@ -115,5 +115,8 @@
 - [x] **LC-053** 去除 GUI：删除 `SelfLoopMatrixMenu/Screen`、`screens/self_loop_matrix.json`、`GuiText` 条目、
   `InitMenuTypes/InitScreens` 注册；方块 `onActivated` 移除；BE 精简为纯接管设备（去槽位/目标/摘要/持久化） —
   验证：编译 + 注册测试（含"GUI 键已移除"断言）
-- [ ] **LC-054** 测试/文档/收尾：guidebook 与 CHANGES.md 更新（已改）；全量验证；版本 `15.6.0 → 15.7.0`（MINOR）、
-  tag `forge/v15.7.0-uelm`、PR 并入 `forge/1.20.1`、Release — 验证：CI + 发布页
+- [x] **LC-054** 测试/文档/收尾：guidebook 与 CHANGES.md 已更新；全量验证 516 用例仅剩基线
+  CubeBuilderTest；CI `TunnelPattern CI` + `Build and Test` success、PR #10 检查通过并合并；
+  版本 `15.6.0 → 15.7.0`（MINOR）、tag `forge/v15.7.0-uelm`、Release 已发布（实测 jar 内
+  mods.toml `version="15.7.0"`、self_loop_matrix 资源 7 项、**GUI screen json = 0 确认已移除**） —
+  验证：CI + 发布页
