@@ -98,3 +98,20 @@
   PR #9 已并入 `forge/1.20.1`；Release v15.6.0-uelm 已发布（产物
   `appliedenergistics2-forge-15.6.0-uelm[-api|-javadoc].jar`，实测 jar 内 mods.toml `version="15.6.0"`、
   含 8 个 self_loop_matrix 资源） — 验证：发布页 + 产物实测
+
+## M5 网络接管：识别 + 技术接管（去 GUI） 
+
+- [ ] **LC-050** 网络配方扫描与环识别：`LoopNetworkScan`（遍历 `grid.getMachines(PatternProviderBlockEntity.class)` →
+  `getLogic().getAvailablePatterns()` → `CyclePatterns.fromPattern` 转换并绑定 pattern→provider）+ `LoopDetector`
+  （Tarjan SCC 依赖图 + 自环检测 → 环清单 + 生产性目标） — 验证：单测
+- [ ] **LC-051** 虚拟样板与接管注册：`CyclePatternDetails implements IPatternDetails`（inputs=计划种子、outputs=[目标×计划量]）；
+  矩阵实现 `ICraftingProvider`（getAvailablePatterns/pushPattern/isBusy/getEmitableItems/高优先级）挂到网格节点服务，
+  识别变化时 `ICraftingProvider.requestUpdate` 刷新 — 验证：单测
+- [ ] **LC-052** 循环执行编排：`LoopExecutionTask`（pushPattern 收到 inputHolder 后按种子重规划，依 affine batches
+  逐批向绑定 provider 转发 pushPattern，busy 时下 tick 重试；产物由网络机器送回） — 验证：单测
+- [ ] **LC-053** 去除 GUI：删除 `SelfLoopMatrixMenu/Screen`、`screens/self_loop_matrix.json`、`GuiText` 条目、
+  `InitMenuTypes/InitScreens` 注册；方块 `onActivated` 移除；BE 精简为纯接管设备（去槽位/目标/摘要） —
+  验证：编译 + 注册测试更新
+- [ ] **LC-054** 测试/文档/收尾：环识别/虚拟样板/执行任务单测；guidebook 与 CHANGES.md 更新；全量验证；
+  版本 `15.6.0 → 15.7.0`（MINOR）、tag `forge/v15.7.0-uelm`、PR 并入 `forge/1.20.1`、Release —
+  验证：CI + 发布页
