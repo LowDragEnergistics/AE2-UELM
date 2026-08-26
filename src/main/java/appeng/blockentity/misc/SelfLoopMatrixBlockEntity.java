@@ -20,210 +20,133 @@ package appeng.blockentity.misc;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 import appeng.api.crafting.IPatternDetails;
-import appeng.api.crafting.PatternDetailsHelper;
-import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.IGrid;
-import appeng.api.stacks.AEItemKey;
+import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.KeyCounter;
 import appeng.blockentity.ServerTickingBlockEntity;
 import appeng.blockentity.grid.AENetworkBlockEntity;
-import appeng.crafting.cycle.CyclePatterns;
+import appeng.crafting.cycle.CyclePatternDetails;
+import appeng.crafting.cycle.CyclePlan;
 import appeng.crafting.cycle.CyclePlanResult;
 import appeng.crafting.cycle.CycleQuantityMode;
 import appeng.crafting.cycle.DeterministicCyclePlanner;
+import appeng.crafting.cycle.LoopExecutionTask;
 import appeng.crafting.cycle.LoopFiring;
-import appeng.crafting.pattern.ProcessingPatternItem;
-import appeng.crafting.pattern.TunnelPatternItem;
-import appeng.util.inv.AppEngInternalInventory;
-import appeng.util.inv.InternalInventoryHost;
+import appeng.crafting.cycle.LoopNetworkScan;
 
 /**
- * The ME Self-Loop Matrix: a computing device attached to an ME network. It holds up to nine loop patterns (processing
- * patterns whose outputs feed back into the loop), a demand target and amount, and computes an exact production plan:
- * per-cycle net change, minimum seed, repetitions, compressed batch schedule and any input shortages.
+ * The ME Self-Loop Matrix: a computing device attached to an ME network that automatically identifies self-loop
+ * (self-multiplying) crafting recipes from the network's pattern providers and takes them over as an
+ * {@link ICraftingProvider}.
+ *
+ * <p>
+ * On a periodic scan it collects every processing pattern offered by the network's pattern providers, detects
+ * production cycles (strongly connected firing groups), plans each productive cycle against the current network storage
+ * and registers the cycle targets as craftable via synthetic patterns. When the crafting CPU pushes a request, the
+ * matrix re-plans from the provided seed amounts and forwards the compressed schedule batches to the providers owning
+ * the loop patterns; the network machines produce the goods as usual.
  */
 public class SelfLoopMatrixBlockEntity extends AENetworkBlockEntity
-        implements InternalInventoryHost, ServerTickingBlockEntity {
+        implements ServerTickingBlockEntity, ICraftingProvider {
 
-    public static final int NUM_PATTERN_SLOTS = 9;
-    public static final int TARGET_SLOT = 0;
-    public static final int MAX_SCHEDULE_STATES = 1024;
+    private static final int SCAN_INTERVAL = 20;
+    private static final int MAX_SCHEDULE_STATES = 1024;
+    private static final BigInteger MAX_REQUEST = BigInteger.valueOf(Long.MAX_VALUE);
+
+    private int scanTimer = 0;
+    private String lastScanFingerprint = "";
+    private final List<Takeover> takeovers = new ArrayList<>();
+    private final List<CyclePatternDetails> patterns = new ArrayList<>();
+    private LoopExecutionTask activeTask;
 
     /**
-     * Plan status synced to the menu: 0 = empty (no patterns/target), 1 = success, 2 = failure.
+     * One registered takeover: a detected loop, its productive target, the last successful plan and the network
+     * bindings used to execute it.
      */
-    public static final int STATUS_EMPTY = 0;
-    public static final int STATUS_SUCCESS = 1;
-    public static final int STATUS_FAILURE = 2;
-
-    private final AppEngInternalInventory patterns = new AppEngInternalInventory(this, NUM_PATTERN_SLOTS);
-    private final AppEngInternalInventory target = new AppEngInternalInventory(this, 1);
-
-    private long requestedAmount = 1;
-    private CycleQuantityMode quantityMode = CycleQuantityMode.NET_NEW;
-
-    private int planStatus = STATUS_EMPTY;
-    private String planSummary = "";
-    private boolean needsRecompute = true;
+    record Takeover(
+            List<LoopFiring> order,
+            AEKey target,
+            CyclePlan plan,
+            List<LoopNetworkScan.PatternBinding> bindings) {
+    }
 
     public SelfLoopMatrixBlockEntity(BlockEntityType<?> blockEntityType, BlockPos pos, BlockState blockState) {
         super(blockEntityType, pos, blockState);
-        this.getMainNode().setIdlePowerUsage(1.0);
+        this.getMainNode()
+                .setIdlePowerUsage(1.0)
+                .addService(ICraftingProvider.class, this);
     }
 
     @Override
     public void serverTick() {
-        if (needsRecompute) {
-            needsRecompute = false;
-            recompute();
+        if (++scanTimer >= SCAN_INTERVAL) {
+            scanTimer = 0;
+            scanNetwork();
         }
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag data) {
-        super.saveAdditional(data);
-        this.patterns.writeToNBT(data, "patterns");
-        this.target.writeToNBT(data, "target");
-        data.putLong("requestedAmount", this.requestedAmount);
-        data.putByte("quantityMode", (byte) this.quantityMode.ordinal());
-    }
-
-    @Override
-    public void loadTag(CompoundTag data) {
-        super.loadTag(data);
-        this.patterns.readFromNBT(data, "patterns");
-        this.target.readFromNBT(data, "target");
-        if (data.contains("requestedAmount")) {
-            this.requestedAmount = data.getLong("requestedAmount");
+        if (activeTask != null && activeTask.tick()) {
+            if (activeTask.isComplete()) {
+                activeTask = null;
+            }
         }
-        if (data.contains("quantityMode")) {
-            this.quantityMode = CycleQuantityMode.values()[data.getByte("quantityMode")];
-        }
-        this.needsRecompute = true;
-    }
-
-    @Override
-    public void onChangeInventory(InternalInventory inv, int slot) {
-        this.needsRecompute = true;
-        this.saveChanges();
-    }
-
-    public AppEngInternalInventory getPatterns() {
-        return this.patterns;
-    }
-
-    public AppEngInternalInventory getTarget() {
-        return this.target;
-    }
-
-    public long getRequestedAmount() {
-        return this.requestedAmount;
-    }
-
-    public void setRequestedAmount(long requestedAmount) {
-        this.requestedAmount = Math.max(1, requestedAmount);
-        this.needsRecompute = true;
-        this.saveChanges();
-    }
-
-    public CycleQuantityMode getQuantityMode() {
-        return this.quantityMode;
-    }
-
-    public void setQuantityMode(CycleQuantityMode quantityMode) {
-        this.quantityMode = quantityMode;
-        this.needsRecompute = true;
-        this.saveChanges();
-    }
-
-    public int getPlanStatus() {
-        return this.planStatus;
-    }
-
-    public String getPlanSummary() {
-        return this.planSummary;
     }
 
     /**
-     * The most recently computed firing order (for tests and display).
+     * Scans the network for loop patterns and refreshes the synthetic craftable patterns when the provider catalog
+     * changed.
      */
-    public List<LoopFiring> getCycleOrder() {
-        return this.cycleOrder;
-    }
-
-    private List<LoopFiring> cycleOrder = List.of();
-
-    /**
-     * Computes the current plan from the pattern slots, demand and network storage.
-     */
-    public void recompute() {
+    private void scanNetwork() {
         var grid = getMainNode().getGrid();
-
-        var firings = new ArrayList<LoopFiring>();
-        for (int i = 0; i < this.patterns.size(); i++) {
-            var stack = this.patterns.getStackInSlot(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof ProcessingPatternItem)) {
-                continue;
+        if (grid == null) {
+            if (!this.patterns.isEmpty()) {
+                this.takeovers.clear();
+                this.patterns.clear();
+                ICraftingProvider.requestUpdate(getMainNode());
             }
-            var pattern = PatternDetailsHelper.decodePattern(stack, getLevel());
-            if (pattern == null) {
-                continue;
-            }
-            var firing = CyclePatterns.fromPattern(pattern, this::lookupTunnel);
-            if (firing != null) {
-                firings.add(firing);
-            }
-        }
-        this.cycleOrder = List.copyOf(firings);
-
-        var targetStack = this.target.getStackInSlot(TARGET_SLOT);
-        if (firings.isEmpty() || targetStack.isEmpty()) {
-            this.planStatus = STATUS_EMPTY;
-            this.planSummary = firings.isEmpty() ? "未放置循环样板" : "请放置目标物品";
             return;
         }
-        var targetKey = AEItemKey.of(targetStack);
-        if (targetKey == null) {
-            this.planStatus = STATUS_EMPTY;
-            this.planSummary = "目标物品无效";
+        var scan = LoopNetworkScan.scan(grid, this::lookupTunnel);
+        var fingerprint = scan.bindings().stream()
+                .map(binding -> binding.pattern().getDefinition().toString())
+                .reduce("", (a, b) -> a + '|' + b);
+        if (fingerprint.equals(this.lastScanFingerprint) && !this.patterns.isEmpty()) {
             return;
         }
+        this.lastScanFingerprint = fingerprint;
 
-        var planner = new DeterministicCyclePlanner();
-        var result = planner.plan(
-                this.cycleOrder,
-                targetKey,
-                BigInteger.valueOf(this.requestedAmount),
-                this.quantityMode,
-                availableAmounts(grid),
-                java.util.Set.of(),
-                MAX_SCHEDULE_STATES);
-        this.planStatus = result.successful() ? STATUS_SUCCESS : STATUS_FAILURE;
-        this.planSummary = summarize(result, targetKey);
+        var available = availableAmounts(grid);
+        var newTakeovers = new ArrayList<Takeover>();
+        var newPatterns = new ArrayList<CyclePatternDetails>();
+        for (var loop : scan.loops()) {
+            var loopBindings = scan.bindingsOf(loop);
+            for (var target : loop.productiveTargets()) {
+                var planned = maxPlan(loop.order(), target, available);
+                if (planned == null) {
+                    continue;
+                }
+                newTakeovers.add(new Takeover(loop.order(), target, planned, loopBindings));
+                newPatterns.add(CyclePatternDetails.forPlan(target, planned));
+            }
+        }
+        this.takeovers.clear();
+        this.takeovers.addAll(newTakeovers);
+        this.patterns.clear();
+        this.patterns.addAll(newPatterns);
+        ICraftingProvider.requestUpdate(getMainNode());
     }
 
     private IPatternDetails lookupTunnel(UUID uuid) {
-        // Tunnel patterns stored in the matrix itself take precedence.
-        for (int i = 0; i < this.patterns.size(); i++) {
-            var stack = this.patterns.getStackInSlot(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof TunnelPatternItem)) {
-                continue;
-            }
-            if (uuid.equals(TunnelPatternItem.getTunnelUuid(stack))) {
-                return PatternDetailsHelper.decodePattern(stack, getLevel());
-            }
-        }
-        // Fall back to the network's crafting index (ME storage).
         var grid = getMainNode().getGrid();
         if (grid != null) {
             return grid.getCraftingService().getInputOnlyPattern(uuid);
@@ -231,80 +154,121 @@ public class SelfLoopMatrixBlockEntity extends AENetworkBlockEntity
         return null;
     }
 
-    private static Map<AEKey, BigInteger> availableAmounts(IGrid grid) {
-        if (grid == null) {
-            return Map.of();
+    /**
+     * Finds the largest plan whose seed is covered by the available inventory, by exponential probing followed by
+     * binary search. Returns the plan for the largest successful request (at least one cycle), or null if even one
+     * cycle cannot be seeded.
+     */
+    static CyclePlan maxPlan(List<LoopFiring> order, AEKey target, Map<AEKey, BigInteger> available) {
+        var planner = new DeterministicCyclePlanner();
+        CyclePlanResult lastSuccess = planner.plan(
+                order, target, BigInteger.ONE, CycleQuantityMode.NET_NEW, available, Set.of(), MAX_SCHEDULE_STATES);
+        if (!lastSuccess.successful()) {
+            return null;
         }
-        var amounts = new java.util.LinkedHashMap<AEKey, BigInteger>();
-        grid.getStorageService().getCachedInventory().forEach(
-                entry -> amounts.put(entry.getKey(), BigInteger.valueOf(entry.getLongValue())));
-        return java.util.Map.copyOf(amounts);
-    }
-
-    private String summarize(CyclePlanResult result, AEKey targetKey) {
-        var builder = new StringBuilder();
-        if (result.successful()) {
-            var plan = result.plan();
-            builder.append("循环计划：成功\n");
-            builder.append("目标：").append(targetKey.getDisplayName())
-                    .append(" x").append(this.requestedAmount)
-                    .append(this.quantityMode == CycleQuantityMode.FINAL_TOTAL ? "（最终总量）" : "（净新增）")
-                    .append("\n");
-            builder.append("重复次数：").append(plan.repetitions()).append("\n");
-            builder.append("每周期净变化：").append(formatAmounts(planNetChangePerCycle())).append("\n");
-            builder.append("最小种子：").append(formatAmounts(plan.minimumSeed())).append("\n");
-            builder.append("初始输入：").append(formatAmounts(plan.initialInputs())).append("\n");
-            builder.append("总净变化：").append(formatSigned(plan.netChange())).append("\n");
-            builder.append("调度批次：").append(plan.schedule().size())
-                    .append("（").append(statesLabel(plan.schedule().size())).append("）\n");
-        } else {
-            var failure = result.failure();
-            builder.append("循环计划：失败\n");
-            switch (failure.code()) {
-                case NO_PRODUCTIVE_CYCLE -> builder.append("原因：该循环对目标无净产出\n");
-                case INSUFFICIENT_INPUT -> {
-                    builder.append("原因：输入不足\n");
-                    failure.missingInputs().forEach((key, requirement) -> builder
-                            .append("缺失：").append(key.getDisplayName())
-                            .append(" 需").append(requirement.required())
-                            .append("，库存").append(requirement.available())
-                            .append("，差").append(requirement.missing()).append("\n"));
-                }
-                case NO_EXECUTABLE_ORDER -> builder.append("原因：无可执行调度顺序\n");
-                case SEARCH_LIMIT -> builder.append("原因：调度状态上限\n");
+        CyclePlan best = lastSuccess.plan();
+        BigInteger lo = BigInteger.ONE; // known-successful request
+        BigInteger hi = null; // first known-failed request, or null if not yet probed
+        BigInteger probe = BigInteger.ONE;
+        while (true) {
+            var next = probe.multiply(BigInteger.valueOf(2));
+            if (next.compareTo(MAX_REQUEST) > 0) {
+                break;
+            }
+            probe = next;
+            var attempt = planner.plan(
+                    order, target, probe, CycleQuantityMode.NET_NEW, available, Set.of(), MAX_SCHEDULE_STATES);
+            if (attempt.successful()) {
+                lo = probe;
+                best = attempt.plan();
+            } else {
+                hi = probe;
+                break;
             }
         }
-        return builder.toString();
-    }
-
-    private Map<AEKey, BigInteger> planNetChangePerCycle() {
-        var net = new java.util.LinkedHashMap<AEKey, BigInteger>();
-        for (var firing : this.cycleOrder) {
-            firing.netChange()
-                    .forEach((key, amount) -> net.merge(key, amount.multiply(firing.count()), BigInteger::add));
+        if (hi == null) {
+            hi = MAX_REQUEST;
         }
-        return java.util.Map.copyOf(net);
+        // Binary search (lo, hi) for the maximum successful request.
+        while (hi.subtract(lo).compareTo(BigInteger.ONE) > 0) {
+            var mid = lo.add(hi).divide(BigInteger.valueOf(2));
+            var attempt = planner.plan(
+                    order, target, mid, CycleQuantityMode.NET_NEW, available, Set.of(), MAX_SCHEDULE_STATES);
+            if (attempt.successful()) {
+                lo = mid;
+                best = attempt.plan();
+            } else {
+                hi = mid;
+            }
+        }
+        return best;
     }
 
-    private static String formatAmounts(Map<AEKey, BigInteger> amounts) {
-        var builder = new StringBuilder();
-        amounts.forEach((key, amount) -> builder.append(key.getDisplayName()).append(" ").append(amount).append("，"));
-        return builder.isEmpty() ? "无" : builder.substring(0, builder.length() - 1);
-    }
+    // ICraftingProvider
 
-    private static String formatSigned(Map<AEKey, BigInteger> amounts) {
-        var builder = new StringBuilder();
-        amounts.forEach((key, amount) -> builder.append(key.getDisplayName())
-                .append(amount.signum() > 0 ? " +" : " ").append(amount).append("，"));
-        return builder.isEmpty() ? "无" : builder.substring(0, builder.length() - 1);
-    }
-
-    private static String statesLabel(int batches) {
-        return batches + " 个批次";
+    @Override
+    public List<IPatternDetails> getAvailablePatterns() {
+        return List.copyOf(this.patterns);
     }
 
     @Override
-    public boolean isClientSide() {
-        return level == null || level.isClientSide();
+    public int getPatternPriority() {
+        // Take over loop targets ahead of the raw loop patterns offered by providers.
+        return 1000;
+    }
+
+    @Override
+    public boolean pushPattern(IPatternDetails patternDetails, KeyCounter[] inputHolder) {
+        if (activeTask != null && !activeTask.isComplete()) {
+            return false;
+        }
+        var takeover = takeoverFor(patternDetails);
+        if (takeover == null) {
+            return false;
+        }
+        var available = new LinkedHashMap<AEKey, BigInteger>();
+        if (inputHolder != null) {
+            for (var holder : inputHolder) {
+                holder.forEach(entry -> available.merge(
+                        entry.getKey(), BigInteger.valueOf(entry.getLongValue()), BigInteger::add));
+            }
+        }
+        // The seed amounts received decide how much of the cycle can actually run.
+        var plan = maxPlan(takeover.order(), takeover.target(), available);
+        if (plan == null) {
+            return false;
+        }
+        this.activeTask = new LoopExecutionTask(plan, takeover.bindings());
+        return true;
+    }
+
+    @Override
+    public boolean isBusy() {
+        return activeTask != null && !activeTask.isComplete();
+    }
+
+    @Override
+    public Set<AEKey> getEmitableItems() {
+        // Do not advertise emitable items: the CPU must expand the seed inputs so that a missing
+        // seed is reported instead of silently promised.
+        return Set.of();
+    }
+
+    private Takeover takeoverFor(IPatternDetails patternDetails) {
+        if (patternDetails instanceof CyclePatternDetails cyclePattern) {
+            for (var takeover : this.takeovers) {
+                if (takeover.target().equals(cyclePattern.target())) {
+                    return takeover;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Map<AEKey, BigInteger> availableAmounts(IGrid grid) {
+        var amounts = new LinkedHashMap<AEKey, BigInteger>();
+        grid.getStorageService().getCachedInventory().forEach(
+                entry -> amounts.put(entry.getKey(), BigInteger.valueOf(entry.getLongValue())));
+        return Map.copyOf(amounts);
     }
 }

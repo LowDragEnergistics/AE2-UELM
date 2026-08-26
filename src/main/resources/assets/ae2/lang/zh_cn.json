@@ -1041,8 +1041,5 @@
   "waila.ae2.Stored": "已存储：%s / %s",
   "waila.ae2.Suppressed": "被抑制",
   "waila.ae2.Unlocked": "未锁定  ",
-  "block.ae2.self_loop_matrix": "ME 自循环矩阵",
-  "gui.ae2.SelfLoopMatrix": "ME 自循环矩阵",
-  "gui.ae2.SelfLoopMatrixTarget": "目标",
-  "gui.ae2.SelfLoopMatrixAmount": "数量"
+  "block.ae2.self_loop_matrix": "ME 自循环矩阵"
 }

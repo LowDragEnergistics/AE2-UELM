@@ -101,17 +101,19 @@
 
 ## M5 网络接管：识别 + 技术接管（去 GUI） 
 
-- [ ] **LC-050** 网络配方扫描与环识别：`LoopNetworkScan`（遍历 `grid.getMachines(PatternProviderBlockEntity.class)` →
+- [x] **LC-050** 网络配方扫描与环识别：`LoopNetworkScan`（遍历 `grid.getMachines(PatternProviderBlockEntity.class)` →
   `getLogic().getAvailablePatterns()` → `CyclePatterns.fromPattern` 转换并绑定 pattern→provider）+ `LoopDetector`
-  （Tarjan SCC 依赖图 + 自环检测 → 环清单 + 生产性目标） — 验证：单测
-- [ ] **LC-051** 虚拟样板与接管注册：`CyclePatternDetails implements IPatternDetails`（inputs=计划种子、outputs=[目标×计划量]）；
-  矩阵实现 `ICraftingProvider`（getAvailablePatterns/pushPattern/isBusy/getEmitableItems/高优先级）挂到网格节点服务，
-  识别变化时 `ICraftingProvider.requestUpdate` 刷新 — 验证：单测
-- [ ] **LC-052** 循环执行编排：`LoopExecutionTask`（pushPattern 收到 inputHolder 后按种子重规划，依 affine batches
-  逐批向绑定 provider 转发 pushPattern，busy 时下 tick 重试；产物由网络机器送回） — 验证：单测
-- [ ] **LC-053** 去除 GUI：删除 `SelfLoopMatrixMenu/Screen`、`screens/self_loop_matrix.json`、`GuiText` 条目、
-  `InitMenuTypes/InitScreens` 注册；方块 `onActivated` 移除；BE 精简为纯接管设备（去槽位/目标/摘要） —
-  验证：编译 + 注册测试更新
-- [ ] **LC-054** 测试/文档/收尾：环识别/虚拟样板/执行任务单测；guidebook 与 CHANGES.md 更新；全量验证；
-  版本 `15.6.0 → 15.7.0`（MINOR）、tag `forge/v15.7.0-uelm`、PR 并入 `forge/1.20.1`、Release —
-  验证：CI + 发布页
+  （Tarjan SCC 依赖图 + 自环检测 → 环清单 + 生产性目标） — 验证：`LoopDetectorTest` 6 用例全绿
+  （单自环/线性链无环/双步环/外部链/多环/收缩环无生产目标）
+- [x] **LC-051** 虚拟样板与接管注册：`CyclePatternDetails implements IPatternDetails`（inputs=计划种子、
+  outputs=[目标×计划量]、long 饱和）；矩阵实现 `ICraftingProvider`（getAvailablePatterns/pushPattern/isBusy/
+  getEmitableItems=空/优先级 1000）挂网格节点服务，识别变化 `requestUpdate` 刷新；
+  `maxPlan` 指数探测+二分求当前存储可支撑最大计划 — 验证：`CycleTakeoverTest` + 注册测试
+- [x] **LC-052** 循环执行编排：`LoopExecutionTask`（pushPattern 按 inputHolder 种子重规划，依 affine batches
+  逐批向绑定 provider 转发 pushPattern，busy 下 tick 重试；产物由网络机器送回） —
+  验证：`CycleTakeoverTest`（转发/重试/inputHolder 槽数）5 用例全绿
+- [x] **LC-053** 去除 GUI：删除 `SelfLoopMatrixMenu/Screen`、`screens/self_loop_matrix.json`、`GuiText` 条目、
+  `InitMenuTypes/InitScreens` 注册；方块 `onActivated` 移除；BE 精简为纯接管设备（去槽位/目标/摘要/持久化） —
+  验证：编译 + 注册测试（含"GUI 键已移除"断言）
+- [ ] **LC-054** 测试/文档/收尾：guidebook 与 CHANGES.md 更新（已改）；全量验证；版本 `15.6.0 → 15.7.0`（MINOR）、
+  tag `forge/v15.7.0-uelm`、PR 并入 `forge/1.20.1`、Release — 验证：CI + 发布页

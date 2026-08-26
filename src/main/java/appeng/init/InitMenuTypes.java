@@ -41,7 +41,6 @@ import appeng.menu.implementations.PatternProviderMenu;
 import appeng.menu.implementations.PriorityMenu;
 import appeng.menu.implementations.QNBMenu;
 import appeng.menu.implementations.QuartzKnifeMenu;
-import appeng.menu.implementations.SelfLoopMatrixMenu;
 import appeng.menu.implementations.SetStockAmountMenu;
 import appeng.menu.implementations.SkyChestMenu;
 import appeng.menu.implementations.SpatialAnchorMenu;
@@ -109,8 +108,7 @@ public final class InitMenuTypes {
                 SuperMEReplenisherMenu.TYPE,
                 VibrationChamberMenu.TYPE,
                 WirelessCraftingTermMenu.TYPE,
-                WirelessAccessPointMenu.TYPE,
-                SelfLoopMatrixMenu.TYPE);
+                WirelessAccessPointMenu.TYPE);
     }
 
     private static void registerAll(IForgeRegistry<MenuType<?>> registry, MenuType<?>... types) {
